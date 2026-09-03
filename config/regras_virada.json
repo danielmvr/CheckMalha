@@ -13,6 +13,8 @@
     "  par_local                lista de pares [destino_anterior, origem_proxima]",
     "  par_rota                 lista de pares [rota_anterior, rota_proxima],",
     "                           cada rota escrita ORIGEM>DESTINO",
+    "  rota_algum_lado          lista de rotas ORIGEM>DESTINO; basta UM dos dois",
+    "                           lados casar",
     "  par_servico              lista de pares [numero_anterior, numero_proximo]",
     "  mesmo_servico            true quando o número do serviço é o mesmo dos dois lados",
     "  local_encaixa            true quando o destino que chega é igual à origem que parte",
@@ -20,7 +22,14 @@
     "  duracao_proxima_max_min  duração do serviço que parte, em minutos, exclusivo",
     "",
     "Todas as condições de uma exceção precisam bater ao mesmo tempo.",
-    "Duração desconhecida nunca satisfaz as condições de duração, por segurança."
+    "Duração desconhecida nunca satisfaz as condições de duração, por segurança.",
+    "",
+    "ignorar: true numa exceção dispensa o elo por completo. Ele não gera",
+    "anomalia nenhuma, nem virada curta nem sobreposição nem local fora do mapa.",
+    "É diferente de abaixar o mínimo: a sobreposição é testada por intervalo",
+    "negativo, antes e independente do mínimo, então mínimo baixo não a silencia.",
+    "Use só onde a coordenação afirmou que o caso não é problema. Os elos",
+    "dispensados são contados e aparecem no console e no cabeçalho do relatório."
   ],
   "classificacao_servico": {
     "_leia": [
@@ -292,29 +301,31 @@
     },
     {
       "id": "transbordo-bsb-div",
-      "descricao": "Ponta de transbordo em DIV: o carro chega de BSB, os passageiros trocam e ele volta para BSB. Não é virada.",
+      "descricao": "Ponta de transbordo em DIV, perna da linha BSB x GYN. Nada nesse encadeamento é anomalia.",
       "_leia": [
-        "Confirmado pelo Daniel em 02/09/2026: DIV é ponta de transbordo da linha",
-        "origem BSB x GYN. O carro faz BSB>DIV, vira em DIV e volta DIV>BSB.",
+        "Confirmado pelo Daniel em 02/09/2026 e reafirmado em 03/09/2026: DIV é",
+        "ponta de transbordo da linha origem BSB x GYN. Qualquer virada que",
+        "toque uma perna do DIV é a mesma linha seguindo, e não deve ser",
+        "sinalizada.",
         "",
-        "Usa par_rota, não par_local: a virada acontece em DIV com DIV, e",
-        "par_local [DIV, DIV] liberaria qualquer virada em DIV. Casar as duas",
-        "rotas inteiras amarra a exceção só nesse par de serviços."
+        "A primeira versão desta exceção usava par_rota com o par DIV<->BSB puro",
+        "e não pegava o caso real, que é a virada em BSB entre a perna do DIV e a",
+        "do GYN. Medido no arquivo de 03/09, o padrão se repete todo dia:",
+        "  GYN>BSB -> BSB>DIV   virada de 5 a 25 min   saía como VIRADA_CURTA",
+        "  DIV>BSB -> BSB>GYN   virada de -5 min       saía como SOBREPOSICAO",
+        "São 2 por dia, 16 nos 9 dias do arquivo.",
+        "",
+        "Por isso rota_algum_lado, que basta um lado casar, e ignorar: true, que",
+        "dispensa o elo inteiro. Abaixar o mínimo não silenciava a sobreposição."
       ],
       "ativa": true,
-      "minimo_min": 1,
       "quando": {
-        "par_rota": [
-          [
-            "BSB>DIV",
-            "DIV>BSB"
-          ],
-          [
-            "DIV>BSB",
-            "BSB>DIV"
-          ]
+        "rota_algum_lado": [
+          "BSB>DIV",
+          "DIV>BSB"
         ]
-      }
+      },
+      "ignorar": true
     }
   ]
 }

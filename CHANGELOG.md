@@ -3,6 +3,40 @@
 Formato MAIOR.MENOR.CORRECAO, explicado em `src/versao.py`. A versão aparece no
 canto superior esquerdo do relatório e da página.
 
+## 1.2.0, 03/09/2026
+
+### Exceção pode dispensar o elo por completo
+
+`ignorar: true` numa exceção faz o elo **não gerar anomalia nenhuma**, nem virada
+curta, nem sobreposição, nem local fora do mapa. Antes só existia abaixar o
+mínimo, e isso não bastava: a sobreposição é testada por `intervalo < 0`, antes e
+independente do mínimo, então virada de -5 min saía como CRITICA por mais baixo
+que o mínimo fosse.
+
+- `RegrasVirada.minimo_para` virou `RegrasVirada.avaliar`, devolvendo também
+  `dispensado`.
+- Condição nova `rota_algum_lado`: lista de rotas `ORIGEM>DESTINO`, basta **um**
+  dos dois lados casar. As condições dentro de `quando` são combinadas em E, e
+  esta é a forma de expressar "qualquer um dos lados".
+- Os elos dispensados são **contados e mostrados**, no console e no cabeçalho do
+  relatório, campo "Dispensadas por exceção". Regra silenciosa esconde erro.
+
+### transbordo-bsb-div corrigida
+
+A primeira versão usava `par_rota` com o par DIV para BSB puro, e não pegava o
+caso real: a virada acontece em **BSB**, entre a perna do DIV e a do GYN. Medido
+no arquivo de 03/09, o padrão se repetia todo dia:
+
+| encadeamento | virada | saía como |
+|---|---|---|
+| `GYN>BSB` para `BSB>DIV` | 5 a 25 min | VIRADA_CURTA |
+| `DIV>BSB` para `BSB>GYN` | -5 min | SOBREPOSICAO |
+
+Eram 2 anomalias por dia, 16 nos 9 dias do arquivo. Agora zero em todos os dias,
+com 3 elos dispensados por dia.
+
+**A linha de base mudou:** menos 2 anomalias por dia de operação.
+
 ## 1.1.0, 03/09/2026
 
 ### Janela de análise de 24 horas a partir do corte

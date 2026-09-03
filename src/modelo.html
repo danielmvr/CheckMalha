@@ -397,8 +397,10 @@ const esc = t => String(t ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;
     ["Janela da análise", m.janela || "?"],
     ["Desenho", DADOS.eixo.inicio + " a " + DADOS.eixo.fim],
     ["Serviços", r.servicos + " em " + r.trilhos + " trilhos"],
-    ["Viradas conferidas", String(r.elos)]
-  ].map(([k,v]) => "<span>" + esc(k) + " <b>" + esc(v) + "</b></span>").join("");
+    ["Viradas conferidas", String(r.elos)],
+    ["Dispensadas por exceção",
+     Object.entries(r.dispensadas || {}).map(([k, v]) => k + " " + v).join(", ")]
+  ].filter(([, valor]) => valor !== "" && valor != null).map(([k,v]) => "<span>" + esc(k) + " <b>" + esc(v) + "</b></span>").join("");
 })();
 
 /* placar */

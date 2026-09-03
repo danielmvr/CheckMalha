@@ -221,6 +221,16 @@ class RegrasVirada:
                 par = (contexto["servico_anterior"], contexto["servico_proximo"])
                 if not any(tuple(p) == par for p in esperado):
                     return False
+            elif chave == "rota_algum_lado":
+                rotas = {
+                    (_sem_acento(contexto.get("origem_anterior", "")) + ">" +
+                     _sem_acento(contexto.get("destino_anterior", ""))),
+                    (_sem_acento(contexto.get("origem_proxima", "")) + ">" +
+                     _sem_acento(contexto.get("destino_proxima", ""))),
+                }
+                alvo = {_sem_acento(r).replace(" ", "") for r in esperado}
+                if not (rotas & alvo):
+                    return False
             elif chave == "par_rota":
                 rota_a = (_sem_acento(contexto.get("origem_anterior", "")) + ">" +
                           _sem_acento(contexto.get("destino_anterior", "")))
@@ -271,18 +281,34 @@ class RegrasVirada:
                 return False
         return True
 
-    def minimo_para(self, contexto: dict) -> tuple[float, str | None, str | None]:
-        """Devolve (mínimo em minutos, id da exceção aplicada, descrição)."""
+    def avaliar(self, contexto: dict) -> tuple[float, str | None, str | None, bool]:
+        """Devolve (mínimo em minutos, id da exceção, descrição, dispensado).
+
+        `dispensado` vem de uma exceção com `"ignorar": true` e significa que o
+        elo **não gera anomalia nenhuma**, nem virada curta nem sobreposição.
+        Abaixar o mínimo não resolvia esse caso: a sobreposição é testada por
+        `intervalo < 0`, antes e independente do mínimo, então virada de -5 min
+        numa ponta de transbordo saía como CRITICA por mais baixo que fosse o
+        mínimo.
+        """
         minimo, regra_id, descricao = self.minimo_padrao, None, None
+        dispensado = False
         for excecao in self.excecoes:
             if not self._condicao_bate(excecao.get("quando", {}), contexto):
+                continue
+            if excecao.get("ignorar"):
+                # Dispensa vale por si, sem competir por menor mínimo.
+                dispensado = True
+                regra_id = excecao.get("id")
+                descricao = excecao.get("descricao")
                 continue
             candidato = float(excecao.get("minimo_min", self.minimo_padrao))
             if candidato < minimo:
                 minimo = candidato
-                regra_id = excecao.get("id")
-                descricao = excecao.get("descricao")
-        return minimo, regra_id, descricao
+                if not dispensado:
+                    regra_id = excecao.get("id")
+                    descricao = excecao.get("descricao")
+        return minimo, regra_id, descricao, dispensado
 
 
 class LinhasCurtas:
@@ -344,6 +370,7 @@ def validar(registros: list[dict], mapa: MapaZonas, regras: RegrasVirada,
 
     mapa.contar_desconhecidos(registros)
     fora_do_encadeamento = 0
+    dispensadas: dict[str, int] = {}
 
     por_trilho: dict[str, list[dict]] = {}
     for registro in registros:
@@ -379,17 +406,21 @@ def validar(registros: list[dict], mapa: MapaZonas, regras: RegrasVirada,
                 "destino_anterior": anterior["destino"],
                 "origem_proxima": proximo["origem"],
                 "destino_proximo": proximo["destino"],
+                "destino_proxima": proximo["destino"],
                 "tipo_anterior": anterior["tipo"],
                 "tipo_proximo": proximo["tipo"],
                 "duracao_anterior": anterior.get("duracao_min"),
                 "duracao_proxima": proximo.get("duracao_min"),
                 "zona_virada": zona_destino,
             }
-            minimo, regra_id, regra_desc = regras.minimo_para(contexto)
+            minimo, regra_id, regra_desc, dispensado = regras.avaliar(contexto)
 
             problemas = []
 
-            if continuidade is False:
+            if dispensado:
+                dispensadas[regra_id or "sem id"] = (
+                    dispensadas.get(regra_id or "sem id", 0) + 1)
+            elif continuidade is False:
                 problemas.append({
                     "tipo": "SEQUENCIA",
                     "severidade": "ALTA",
@@ -401,7 +432,7 @@ def validar(registros: list[dict], mapa: MapaZonas, regras: RegrasVirada,
                         f"({mapa.rotulo(proximo['origem'])})."
                     ),
                 })
-            elif continuidade is None:
+            elif continuidade is None and not dispensado:
                 fora = [mapa.resolver(l)
                         for l in (anterior["destino"], proximo["origem"])
                         if mapa.zona(l) is None]
@@ -415,7 +446,9 @@ def validar(registros: list[dict], mapa: MapaZonas, regras: RegrasVirada,
                     ),
                 })
 
-            if intervalo < 0:
+            if dispensado:
+                pass
+            elif intervalo < 0:
                 problemas.append({
                     "tipo": "SOBREPOSICAO",
                     "severidade": "CRITICA",
@@ -470,6 +503,7 @@ def validar(registros: list[dict], mapa: MapaZonas, regras: RegrasVirada,
                 "zona_destino": zona_destino,
                 "zona_origem": zona_origem,
                 "cobra_virada": True,
+                "dispensado": dispensado,
                 "problemas": problemas,
             })
 
@@ -499,6 +533,7 @@ def validar(registros: list[dict], mapa: MapaZonas, regras: RegrasVirada,
             "blocos_internos": sum(1 for r in registros if not r["e_servico"]),
             "fora_do_encadeamento": fora_do_encadeamento,
         },
+        "dispensadas": dispensadas,
         "linhas_curtas": {
             "ativa": bool(linhas_curtas and linhas_curtas.ativa),
             "pares": len(linhas_curtas.pares) if linhas_curtas else 0,

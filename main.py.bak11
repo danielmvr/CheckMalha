@@ -350,12 +350,6 @@ def main() -> int:
               f"(manutenção, revisão, sem número)")
         aviso(f"  {cls_info['fora_do_encadeamento']} bloco(s) fora do encadeamento, "
               f"aparecem na linha do tempo mas não geram anomalia")
-    dispensadas = resultado.get("dispensadas") or {}
-    if dispensadas:
-        detalhe = ", ".join(f"{k} {v}" for k, v in sorted(dispensadas.items()))
-        aviso(f"{sum(dispensadas.values())} virada(s) dispensada(s) por exceção, "
-              f"sem gerar anomalia: {detalhe}")
-
     total = sum(t["total_anomalias"] for t in resultado["trilhos"])
     afetados = sum(1 for t in resultado["trilhos"] if t["total_anomalias"])
     aviso(f"{total} anomalia(s) em {afetados} de {len(resultado['trilhos'])} trilhos")
