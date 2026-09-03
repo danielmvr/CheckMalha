@@ -169,6 +169,7 @@ def montar_dados(resultado: dict, meta: dict, descartados: list[dict],
     mapa_empresas = _mapa_empresas()
     por_empresa: dict[str, int] = {}
     por_empresa_anomalia: dict[str, int] = {}
+    por_empresa_ocorrencias: dict[str, int] = {}
     trilhos_saida = []
 
     for trilho, pedacos_do_trilho in zip(trilhos, pedacos_por_trilho):
@@ -242,6 +243,11 @@ def montar_dados(resultado: dict, meta: dict, descartados: list[dict],
         por_empresa[empresa] = por_empresa.get(empresa, 0) + 1
         if trilho["total_anomalias"]:
             por_empresa_anomalia[empresa] = por_empresa_anomalia.get(empresa, 0) + 1
+            # Contagem em ocorrências, para o botão falar a mesma língua do
+            # contador que fica ao lado dele na barra. Em trilhos os números não
+            # somavam o total e a barra ficava contraditória.
+            por_empresa_ocorrencias[empresa] = (
+                por_empresa_ocorrencias.get(empresa, 0) + trilho["total_anomalias"])
 
         # Pior virada do trilho: o menor intervalo entre os elos que geraram
         # anomalia. Sobreposição é intervalo negativo, então ela cai na frente
@@ -287,6 +293,7 @@ def montar_dados(resultado: dict, meta: dict, descartados: list[dict],
             "tipo": por_tipo,
             "empresas": por_empresa,
             "empresas_com_anomalia": por_empresa_anomalia,
+            "empresas_ocorrencias": por_empresa_ocorrencias,
             "empresas_ordem": mapa_empresas.get("ordem", []),
             "empresas_rotulos": mapa_empresas.get("rotulos", {}),
             "dispensadas": resultado.get("dispensadas") or {},

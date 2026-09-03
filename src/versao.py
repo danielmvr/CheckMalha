@@ -11,4 +11,4 @@ Formato MAIOR.MENOR.CORRECAO:
   CORRECAO  conserto de defeito ou de texto, sem efeito nos números.
 """
 
-VERSAO = "1.3.0"
+VERSAO = "1.4.0"

@@ -3,6 +3,32 @@
 Formato MAIOR.MENOR.CORRECAO, explicado em `src/versao.py`. A versão aparece no
 canto superior esquerdo do relatório e da página.
 
+## 1.4.0, 03/09/2026
+
+### Contador de ocorrências na barra de empresa
+
+Bloco destacado, fundo cheio na cor da tinta, no começo da barra de filtro de
+empresa, com a barra centralizada. Conta **ocorrências**, não trilhos, e conta o
+mesmo que os cartões desenham: problema por problema depois do `casoVisivel`.
+
+- Reage a todos os filtros juntos, empresa, tipo, severidade e busca.
+- Sem filtro mostra só o número. Com filtro mostra "N de M" e fica azul, senão o
+  número sozinho não diz de quanto é.
+- Verde quando o dia não tem anomalia nenhuma.
+- O contador fica sempre, mesmo quando o dia tem uma empresa só e as fichas de
+  empresa não aparecem.
+
+### Botões de empresa passaram a contar ocorrências
+
+Efeito colateral que o contador expôs: os botões mostravam **trilhos** e somavam
+31 ao lado de um contador que dizia 34 ocorrências. Duas unidades diferentes
+lado a lado na mesma barra.
+
+Agora os botões contam ocorrências e **somam exatamente o total**, o que torna a
+barra autoverificável: clicar em `RAF 12` faz o contador dizer "12 ocorrências de
+34". A contagem em trilhos foi para o `title`: "12 ocorrência(s) em 10
+trilho(s), de 61 na malha". Campo novo no resumo: `empresas_ocorrencias`.
+
 ## 1.3.0, 03/09/2026
 
 ### Ordem de exibição pela virada mais apertada

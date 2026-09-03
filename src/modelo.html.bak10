@@ -472,12 +472,10 @@ const esc = t => String(t ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;
   // Vem do resumo, e não dos trilhos, porque o payload só traz os com anomalia.
   const naMalha = DADOS.resumo.empresas || {};
   const comAnomalia = DADOS.resumo.empresas_com_anomalia || {};
-  const ocorrencias = DADOS.resumo.empresas_ocorrencias || {};
   const contagem = new Map();
   Object.keys(naMalha).forEach(nome => contagem.set(nome, {
     total: naMalha[nome] || 0,
     comAnomalia: comAnomalia[nome] || 0,
-    ocorrencias: ocorrencias[nome] || 0,
   }));
 
   const rotulos = DADOS.resumo.empresas_rotulos || {};
@@ -492,9 +490,9 @@ const esc = t => String(t ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;
     ordem.map(nome => {
       const c = contagem.get(nome);
       return '<button class="ficha" data-empresa="' + esc(nome) + '"' +
-        ' aria-pressed="false" title="' + c.ocorrencias + " ocorrência(s) em " +
-        c.comAnomalia + " trilho(s), de " + c.total + ' na malha">' +
-        esc(rotulos[nome] || nome) + " " + c.ocorrencias + "</button>";
+        ' aria-pressed="false" title="' + c.comAnomalia +
+        " trilho(s) com anomalia, de " + c.total + ' na malha">' +
+        esc(rotulos[nome] || nome) + " " + c.comAnomalia + "</button>";
     }).join("");
 
   caixa.innerHTML =
