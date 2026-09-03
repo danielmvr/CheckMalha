@@ -393,6 +393,40 @@
           "QJO>RIO"
         ]
       }
+    },
+    {
+      "id": "vira-em-man",
+      "descricao": "O carro da linha SSA x MAN vira em MAN. Nada nessa virada é anomalia.",
+      "_leia": [
+        "Regra do Daniel, 03/09/2026: a linha SSA x MAN vira nela mesma, então a",
+        "virada em MAN é construção da malha. Vale para virada curta e para",
+        "sobreposição, daí o ignorar.",
+        "",
+        "Medido no arquivo de 03/09: MAN é tocado por duas rotas só, SSA>MAN e",
+        "MAN>SSA. A única virada em MAN da janela é SSA>MAN -> MAN>SSA, com",
+        "intervalo de -20 min, que saía como SOBREPOSICAO CRITICA. Sem o ignorar",
+        "ela continuaria aparecendo, porque sobreposição é testada antes do mínimo.",
+        "",
+        "MAN não tem zona cadastrada e resolve para si mesmo. Não confundir com",
+        "GMA, que é outro local.",
+        "",
+        "Mesmo desenho da vira-em-qmi e da vira-em-qjo: par_local amarra a virada",
+        "EM MAN e rota_algum_lado amarra a perna do SSA."
+      ],
+      "ativa": true,
+      "ignorar": true,
+      "quando": {
+        "par_local": [
+          [
+            "MAN",
+            "MAN"
+          ]
+        ],
+        "rota_algum_lado": [
+          "SSA>MAN",
+          "MAN>SSA"
+        ]
+      }
     }
   ]
 }

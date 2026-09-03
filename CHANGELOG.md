@@ -3,6 +3,21 @@
 Formato MAIOR.MENOR.CORRECAO, explicado em `src/versao.py`. A versão aparece no
 canto superior esquerdo do relatório e da página.
 
+## 1.5.0, 03/09/2026
+
+### Exceção vira-em-man
+
+Quarta da família "linha que vira nela mesma", mesmo desenho das de QMI e QJO:
+`par_local: [["MAN","MAN"]]` mais `rota_algum_lado: ["SSA>MAN","MAN>SSA"]`, com
+`ignorar: true`.
+
+Medido no arquivo de 03/09: MAN é tocado por duas rotas só, `SSA>MAN` e
+`MAN>SSA`. A única virada em MAN da janela é `SSA>MAN` para `MAN>SSA`, com
+**-20 min**, que saía como SOBREPOSICAO CRITICA. O `ignorar` é indispensável
+aqui, porque sobreposição é testada antes e independente do mínimo.
+
+MAN não tem zona cadastrada e resolve para si mesmo. Não confundir com GMA.
+
 ## 1.4.0, 03/09/2026
 
 ### Contador de ocorrências na barra de empresa
