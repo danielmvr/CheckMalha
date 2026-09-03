@@ -142,6 +142,36 @@ def rodar(dia: str, corte: str, remoto: bool, janela: int) -> dict:
     return resposta
 
 
+# ---------------------------------------------------------------- resumo
+# Chamado pelo Portal E-Guaba num quadro oculto (?view=resumo&token=...).
+# Publica só o número de anomalias por postMessage e encerra, sem desenhar a
+# página. Usa os mesmos argumentos padrão da tela, então divide o cache com ela
+# e não dispara uma rodada a mais do pipeline.
+if st.query_params.get("view") == "resumo":
+    import streamlit.components.v1 as _componentes
+
+    _anomalias = None
+    try:
+        _r = rodar("", "agora", bool(TEM_URL), int(time.time() // INTERVALO_SEG))
+        if _r.get("ok"):
+            _valor = _r.get("ultimo", {}).get("anomalias")
+            _anomalias = int(_valor) if _valor is not None else None
+    except Exception:
+        _anomalias = None
+
+    _carga = json.dumps({
+        "type": "eguaba:resumo",
+        "app": "checkmalha",
+        "token": st.query_params.get("token") or "",
+        "anomalias": _anomalias,
+    })
+    _componentes.html(
+        "<script>(function(){function e(){window.top.postMessage("
+        + _carga + ", '*');}e();setTimeout(e,2000);setTimeout(e,6000);"
+        "})();</script>", height=0)
+    st.stop()
+
+
 # ---------------------------------------------------------------- topo
 try:
     from streamlit_autorefresh import st_autorefresh
