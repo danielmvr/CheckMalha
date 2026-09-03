@@ -3,6 +3,41 @@
 Formato MAIOR.MENOR.CORRECAO, explicado em `src/versao.py`. A versão aparece no
 canto superior esquerdo do relatório e da página.
 
+## 1.3.0, 03/09/2026
+
+### Ordem de exibição pela virada mais apertada
+
+Pedido do Daniel: o coordenador precisa resolver os piores primeiro. A lista de
+trilhos e as ocorrências dentro de cada cartão passaram a sair **da menor virada
+para a maior**. Sobreposição é intervalo negativo, então cai na frente sozinha,
+sem precisar de regra à parte.
+
+A severidade virou critério de desempate, porque o tempo de virada é a medida
+direta do aperto e a severidade é derivada dele. Cada trilho carrega
+`pior_virada`, o menor intervalo entre seus elos com anomalia.
+
+### Duas exceções novas de linha que vira nela mesma
+
+| exceção | virada em | pernas | o que saía |
+|---|---|---|---|
+| `vira-em-qmi` | QMI | `QVR>QMI`, `QMI>QVR` | 8 VIRADA_CURTA de 10 min |
+| `vira-em-qjo` | QJO | `RIO>QJO`, `QJO>RIO` | 7 VIRADA_CURTA de 105 a 150 min |
+
+Ambas com `ignorar: true`, valendo para virada curta e sobreposição.
+
+**As duas condições são obrigatórias juntas:** `par_local` amarra a virada no
+local certo e `rota_algum_lado` amarra a perna da linha. Só o `par_local`
+liberaria qualquer virada naquele local; só a rota liberaria a virada daquela
+linha em outro lugar. Em QMI isso importa: das 12 viradas medidas no arquivo, as
+4 que não vêm de uma perna do QVR têm intervalo folgado e seguem sendo
+conferidas.
+
+Conferido dia a dia de 31/08 a 08/09: zero anomalias remanescentes em viradas de
+QMI, QJO ou DIV.
+
+**A linha de base mudou:** menos 2 anomalias por dia de operação, além das 2 da
+1.2.0.
+
 ## 1.2.0, 03/09/2026
 
 ### Exceção pode dispensar o elo por completo

@@ -243,8 +243,15 @@ def montar_dados(resultado: dict, meta: dict, descartados: list[dict],
         if trilho["total_anomalias"]:
             por_empresa_anomalia[empresa] = por_empresa_anomalia.get(empresa, 0) + 1
 
+        # Pior virada do trilho: o menor intervalo entre os elos que geraram
+        # anomalia. Sobreposição é intervalo negativo, então ela cai na frente
+        # sozinha, sem precisar de regra à parte.
+        apertados = [e["intervalo_min"] for e in elos if e["problemas"]]
+        pior_virada = min(apertados) if apertados else None
+
         trilhos_saida.append({
             "nome": trilho["nome"],
+            "pior_virada": pior_virada,
             "prefixo": trilho["prefixo"],
             "empresa": empresa,
             "severidade": trilho["severidade_max"],
@@ -253,7 +260,12 @@ def montar_dados(resultado: dict, meta: dict, descartados: list[dict],
             "elos": elos,
         })
 
+    # Ordem de exibição pedida pelo Daniel em 03/09/2026: da menor virada para a
+    # maior, para o coordenador atacar o pior primeiro. A severidade caiu para
+    # critério de desempate, porque o tempo de virada é a medida direta do
+    # aperto, e a severidade é derivada dele.
     trilhos_saida.sort(key=lambda t: (
+        t["pior_virada"] if t["pior_virada"] is not None else float("inf"),
         ["CRITICA", "ALTA", "MEDIA", "BAIXA", "OK"].index(t["severidade"]),
         -t["total"],
         t["nome"],

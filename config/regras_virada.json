@@ -326,6 +326,73 @@
         ]
       },
       "ignorar": true
+    },
+    {
+      "id": "vira-em-qmi",
+      "descricao": "O carro da linha QVR x QMI vira em QMI. Nada nessa virada é anomalia.",
+      "_leia": [
+        "Regra do Daniel, 03/09/2026: a linha QVR x QMI vira nela mesma, então a",
+        "virada em QMI é sempre curta por construção. Vale para virada curta e",
+        "para sobreposição, daí o ignorar.",
+        "",
+        "Medido no arquivo de 03/09, viradas em QMI na janela inteira:",
+        "  QVR>QMI -> QMI>QVR   7x   10 min   VIRADA_CURTA",
+        "  QVR>QMI -> QMI>SJK   1x   10 min   VIRADA_CURTA",
+        "  BHZ>QMI -> QMI>BHZ   1x  365 min   sem anomalia",
+        "  BMA>QMI -> QMI>RIO   1x  939 min   sem anomalia",
+        "  RIO>QMI -> QMI>PGR   1x    0 min   sem anomalia",
+        "  RIO>QMI -> QMI>RIO   1x 1109 min   sem anomalia",
+        "Todas as 8 anomalias vinham de uma perna do QVR. As outras 4 viradas em",
+        "QMI têm intervalo folgado e não são tocadas por esta exceção.",
+        "",
+        "As duas condições são obrigatórias juntas: par_local amarra a virada EM",
+        "QMI, e rota_algum_lado amarra a perna do QVR. Só o par_local liberaria",
+        "qualquer virada em QMI; só a rota liberaria virada do QVR em outro lugar."
+      ],
+      "ativa": true,
+      "ignorar": true,
+      "quando": {
+        "par_local": [
+          [
+            "QMI",
+            "QMI"
+          ]
+        ],
+        "rota_algum_lado": [
+          "QVR>QMI",
+          "QMI>QVR"
+        ]
+      }
+    },
+    {
+      "id": "vira-em-qjo",
+      "descricao": "O carro da linha RIO x QJO vira em QJO. Nada nessa virada é anomalia.",
+      "_leia": [
+        "Regra do Daniel, 03/09/2026: a linha RIO x QJO vira nela mesma, então a",
+        "virada em QJO é sempre curta por construção. Vale para virada curta e",
+        "para sobreposição, daí o ignorar.",
+        "",
+        "Medido no arquivo de 03/09: as 7 viradas em QJO da janela são todas",
+        "RIO>QJO -> QJO>RIO, de 105 a 150 min, todas saindo como VIRADA_CURTA.",
+        "Só três rotas tocam QJO no arquivo: RIO>QJO, QJO>RIO e QJO>BMA.",
+        "",
+        "Mesmo desenho da vira-em-qmi: par_local amarra a virada EM QJO e",
+        "rota_algum_lado amarra a perna do RIO."
+      ],
+      "ativa": true,
+      "ignorar": true,
+      "quando": {
+        "par_local": [
+          [
+            "QJO",
+            "QJO"
+          ]
+        ],
+        "rota_algum_lado": [
+          "RIO>QJO",
+          "QJO>RIO"
+        ]
+      }
     }
   ]
 }

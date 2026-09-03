@@ -334,7 +334,9 @@ button.marcador:hover{background:#F5F8FB}
 
   <div class="controles" id="controlesEmpresa"></div>
 
-  <p class="convencao">No desenho, cada serviço aparece só na vizinhança da virada:
+  <p class="convencao">A lista vem ordenada da virada mais apertada para a mais
+     folgada, sobreposição primeiro, para atacar o pior caso antes.
+     <br>No desenho, cada serviço aparece só na vizinhança da virada:
      a última hora de quem chega e a primeira hora de quem parte. A borda tracejada
      marca onde a barra foi cortada, e o bloco sem virada de nenhum lado aparece
      recortado no dia. Os horários do texto, da dica e do CSV são os cheios.
@@ -486,7 +488,11 @@ const passoMarcas = DADOS.eixo.marcas.length > 1
   ? DADOS.eixo.marcas[1].pos - DADOS.eixo.marcas[0].pos : 100;
 
 function problemasDoTrilho(t){
-  return t.elos.flatMap(e => e.problemas.map(p => ({elo:e, problema:p})));
+  // Mesma ordem da lista de trilhos: da virada mais apertada para a mais
+  // folgada. Sobreposição é intervalo negativo e vem primeiro.
+  return t.elos
+    .flatMap(e => e.problemas.map(p => ({elo:e, problema:p})))
+    .sort((a, b) => a.elo.intervalo_min - b.elo.intervalo_min);
 }
 
 function passaFiltro(t){
