@@ -211,7 +211,7 @@ ultimo = resultado.get("ultimo", {})
 meta = ultimo.get("meta", {})
 
 st.caption(
-    f"Malha de {meta.get('dia_operacao', '?')} · corte {meta.get('corte', '?')} · "
+    f"Malha de {meta.get('dia_operacao', '?')} · janela {meta.get('janela', '?')} · "
     f"**extração gerada em {meta.get('extracao_em', '?')}** · relatório gerado em "
     f"{meta.get('gerado_em', '?')} · fonte {meta.get('arquivo_origem', '?')} · "
     f"apurado em {resultado['segundos']:.0f} s"

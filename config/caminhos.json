@@ -17,5 +17,7 @@
   "execucao_url": "https://bcoguan02-my.sharepoint.com/:x:/g/personal/daniel_reis_util_com_br/IQB2ID-vgj92TaoQ1E20QBUjAaJoQKbQKIfus0Rl-UdMo4A?e=n1L9ai",
   "_execucao_url": "NÃO ponha o link aqui se este projeto for para um repositório público: a URL carrega o token de compartilhamento, e quem tem o link tem o arquivo. Use a variável de ambiente SIGLA_EXECUCAO_URL, ou os Secrets do Streamlit Cloud. Este campo existe só para uso local.",
   "execucao_cache": "dados_trabalho/remoto/execucao.XLS",
-  "_execucao_cache": "Onde a cópia baixada do link é gravada. Relativo à raiz do projeto. Se um download falhar e existir cópia anterior, o main.py segue com ela e avisa que pode estar velha."
+  "_execucao_cache": "Onde a cópia baixada do link é gravada. Relativo à raiz do projeto. Se um download falhar e existir cópia anterior, o main.py segue com ela e avisa que pode estar velha.",
+  "janela_horas": 24,
+  "_janela_horas": "Tamanho da janela de análise, em horas, contada da hora de corte para frente. Era até 23:59 do dia alvo, e a janela encurtava conforme o dia avançava. Sem corte, a janela volta a ser o dia alvo inteiro."
 }

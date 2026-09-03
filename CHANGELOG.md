@@ -3,6 +3,33 @@
 Formato MAIOR.MENOR.CORRECAO, explicado em `src/versao.py`. A versão aparece no
 canto superior esquerdo do relatório e da página.
 
+## 1.1.0, 03/09/2026
+
+### Janela de análise de 24 horas a partir do corte
+
+Antes a análise ia do corte até 23:59 do dia alvo, então a janela encurtava
+conforme o dia avançava e a análise da noite ficava sem material. Medido no
+arquivo de 03/09:
+
+| hora de corte | antes, até 23:59 | agora, 24h do corte |
+|---|---|---|
+| 06:00 | 18h, 619 serviços, 43 anomalias | 24h, 672 serviços, 45 anomalias |
+| 12:00 | 12h, 457 serviços, 25 anomalias | 24h, 636 serviços, 42 anomalias |
+| 18:00 | 6h, 350 serviços, 9 anomalias | 24h, 667 serviços, 36 anomalias |
+| 23:00 | **1h, 240 serviços, 2 anomalias** | **24h, 711 serviços, 47 anomalias** |
+
+- `fonte_execucao.preparar` passou a receber a janela pronta, `[inicio, fim)`,
+  em vez do dia alvo.
+- `main.py` resolve a hora de corte **antes** do recorte, porque é dela que a
+  janela nasce, e ganhou `_janela()`. Tamanho em `JANELA_HORAS = 24`,
+  sobreponível por `janela_horas` no `config/caminhos.json`.
+- Sem corte (`--corte nao`), a janela volta a ser o dia alvo inteiro, que é o
+  que faz sentido para revisar um dia que já passou.
+- Aviso novo quando a janela passa da última partida do arquivo: o trecho final
+  fica sem dado e o execucao precisa cobrir mais dias para frente.
+- No cabeçalho do relatório, "Janela" agora é a janela da análise, e o intervalo
+  do eixo virou "Desenho".
+
 ## 1.0.0, 03/09/2026
 
 Primeira versão numerada. Estado do validador da malha SIGLA nesta data.

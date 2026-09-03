@@ -76,27 +76,31 @@ def _juntar(pedacos: list[tuple[datetime, datetime]]) -> list[tuple[datetime, da
     return [(a, b) for a, b in juntos]
 
 
-def _trecho_no_dia(inicio: datetime, fim: datetime, dia_alvo: datetime | None,
-                   janela: timedelta) -> tuple[datetime, datetime]:
-    """Serviço sem virada de nenhum lado: mostra o que cai dentro do dia alvo.
+def _trecho_na_janela(inicio: datetime, fim: datetime,
+                      janela: tuple[datetime, datetime] | None,
+                      recorte: timedelta) -> tuple[datetime, datetime]:
+    """Serviço sem virada de nenhum lado: mostra o que cai dentro da janela.
 
-    É o caso do bloco de manutenção que dura duas semanas. Recortar pelo dia
-    mantém a barra informativa sem arrastar o eixo para fora da malha do dia.
+    É o caso do bloco de manutenção que dura duas semanas. Recortar pela janela
+    mantém a barra informativa sem arrastar o eixo para fora do que está sendo
+    analisado. Antes o recorte era pelo dia alvo, o que passou a puxar o eixo
+    para 00:00 depois que a janela virou 24h contadas do corte.
     """
-    if dia_alvo is None:
-        return (inicio, min(fim, inicio + janela))
-    abre = dia_alvo.replace(hour=0, minute=0, second=0, microsecond=0)
-    fecha = abre + timedelta(days=1)
+    if janela is None:
+        return (inicio, min(fim, inicio + recorte))
+    abre, fecha = janela
     corte_a, corte_b = max(inicio, abre), min(fim, fecha)
     if corte_b <= corte_a:
-        return (inicio, min(fim, inicio + janela))
+        return (inicio, min(fim, inicio + recorte))
     return (corte_a, corte_b)
 
 
-def _pedacos_do_trilho(trilho: dict,
-                       dia_alvo: datetime | None) -> list[list[tuple[datetime, datetime]]]:
+def _pedacos_do_trilho(
+    trilho: dict,
+    janela: tuple[datetime, datetime] | None,
+) -> list[list[tuple[datetime, datetime]]]:
     """Trechos de cada serviço que entram no desenho, na ordem dos serviços."""
-    janela = timedelta(minutes=RECORTE_MIN)
+    recorte = timedelta(minutes=RECORTE_MIN)
     indice = {id(s): i for i, s in enumerate(trilho["servicos"])}
     chega, parte = set(), set()
     for elo in trilho["elos"]:
@@ -111,11 +115,11 @@ def _pedacos_do_trilho(trilho: dict,
             fim = inicio
         pedacos = []
         if i in parte:
-            pedacos.append((inicio, min(fim, inicio + janela)))
+            pedacos.append((inicio, min(fim, inicio + recorte)))
         if i in chega:
-            pedacos.append((max(inicio, fim - janela), fim))
+            pedacos.append((max(inicio, fim - recorte), fim))
         if not pedacos:
-            pedacos.append(_trecho_no_dia(inicio, fim, dia_alvo, janela))
+            pedacos.append(_trecho_na_janela(inicio, fim, janela, recorte))
         saida.append(_juntar(pedacos))
     return saida
 
@@ -154,9 +158,9 @@ def _posicao(momento: datetime, eixo: dict) -> float:
 
 
 def montar_dados(resultado: dict, meta: dict, descartados: list[dict],
-                 dia_alvo: datetime | None = None) -> dict:
+                 janela: tuple[datetime, datetime] | None = None) -> dict:
     trilhos = resultado["trilhos"]
-    pedacos_por_trilho = [_pedacos_do_trilho(t, dia_alvo) for t in trilhos]
+    pedacos_por_trilho = [_pedacos_do_trilho(t, janela) for t in trilhos]
     eixo = _montar_eixo([p for trilho in pedacos_por_trilho
                          for servico in trilho for p in servico])
 

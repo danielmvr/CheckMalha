@@ -394,8 +394,8 @@ const esc = t => String(t ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;
     ["Extração", m.arquivo_origem],
     ["Extração gerada em", m.extracao_em || "?"],
     ["Cópia de trabalho", m.arquivo_trabalho],
-    ["Janela", DADOS.eixo.inicio + " a " + DADOS.eixo.fim],
-    ["Corte", m.corte || "sem corte"],
+    ["Janela da análise", m.janela || "?"],
+    ["Desenho", DADOS.eixo.inicio + " a " + DADOS.eixo.fim],
     ["Serviços", r.servicos + " em " + r.trilhos + " trilhos"],
     ["Viradas conferidas", String(r.elos)]
   ].map(([k,v]) => "<span>" + esc(k) + " <b>" + esc(v) + "</b></span>").join("");

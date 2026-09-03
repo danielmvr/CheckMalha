@@ -372,8 +372,7 @@ def main() -> int:
         "minimo_virada": f"{regras.minimo_padrao:.0f} min",
     }
     dados = montar_dados(resultado, meta, descartados,
-                         janela=_janela(corte, extracao.data_operacao,
-                                        janela_horas))
+                         dia_alvo=extracao.data_operacao)
 
     # Nome fixo, um relatório por dia de operação, sobrescrito a cada execução.
     # Com carimbo de hora e uma rodada a cada 10 minutos, a pasta saida crescia

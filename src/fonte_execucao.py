@@ -8,7 +8,10 @@ espera, fazendo três coisas que a fonte exige:
   1. Deduplicar. O grão é a escala do motorista, não a viagem. Rendição e dupla
      tripulação geram uma linha por motorista para a mesma viagem.
   2. Recortar a janela. O arquivo cobre do dia alvo menos três até o fim da
-     malha publicada. Só interessam as viagens que cruzam o dia alvo.
+     malha publicada. Só interessam as viagens que cruzam a janela pedida, que
+     quem chama define. Hoje é de 24 horas contadas da hora de corte, e não até
+     23:59 do dia: assim a análise da madrugada olha para as 24 horas seguintes
+     em vez de sobrar meia hora de malha.
   3. Descartar veículo que não é veículo. SIMULTANEO, TURISMO, CANCELAD.*,
      N ABRIR* e vazio são marcadores, não carros, e sem carro não dá para
      encadear trilho.
@@ -94,8 +97,12 @@ def periodo(df: pd.DataFrame) -> tuple[datetime | None, datetime | None]:
     return partida.min().to_pydatetime(), partida.max().to_pydatetime()
 
 
-def preparar(df: pd.DataFrame, dia_alvo: datetime) -> tuple[pd.DataFrame, dict]:
-    """Devolve (tabela pronta para o normalizador, relatório do que foi cortado)."""
+def preparar(df: pd.DataFrame, inicio_janela: datetime,
+             fim_janela: datetime) -> tuple[pd.DataFrame, dict]:
+    """Devolve (tabela pronta para o normalizador, relatório do que foi cortado).
+
+    A janela é fechada no início e aberta no fim: `[inicio_janela, fim_janela)`.
+    """
     bruto = df.copy()
     for coluna in bruto.columns:
         bruto[coluna] = _texto(bruto[coluna])
@@ -108,26 +115,24 @@ def preparar(df: pd.DataFrame, dia_alvo: datetime) -> tuple[pd.DataFrame, dict]:
     partida = pd.to_datetime(viagens["Partida Prevista"], errors="coerce")
     chegada = pd.to_datetime(viagens["Chegada Prevista"], errors="coerce")
 
-    inicio_dia = pd.Timestamp(
-        dia_alvo.replace(hour=0, minute=0, second=0, microsecond=0)
-    )
-    fim_dia = inicio_dia + pd.Timedelta(days=1)
+    abre = pd.Timestamp(inicio_janela)
+    fecha = pd.Timestamp(fim_janela)
 
-    # Uma viagem interessa se qualquer parte dela cai dentro do dia alvo. Isso
-    # inclui a que começou ontem e ainda está rodando, que é justamente o motivo
-    # da janela pedir três dias para trás.
-    cruza = (partida < fim_dia) & (chegada >= inicio_dia)
+    # Uma viagem interessa se qualquer parte dela cai dentro da janela. Isso
+    # inclui a que começou antes e ainda está rodando, que é justamente o motivo
+    # de o arquivo pedir três dias para trás.
+    cruza = (partida < fecha) & (chegada >= abre)
     sem_horario = partida.isna() | chegada.isna()
 
-    no_dia = viagens[cruza & ~sem_horario]
+    na_janela = viagens[cruza & ~sem_horario]
     fora_da_janela = int((~cruza & ~sem_horario).sum())
     horario_ilegivel = int(sem_horario.sum())
 
-    veiculo = _texto(no_dia["Veículo"]).str.upper()
-    if "Frota" in no_dia.columns:
-        frota = _texto(no_dia["Frota"]).str.upper()
+    veiculo = _texto(na_janela["Veículo"]).str.upper()
+    if "Frota" in na_janela.columns:
+        frota = _texto(na_janela["Frota"]).str.upper()
     else:
-        frota = pd.Series("", index=no_dia.index, dtype="object")
+        frota = pd.Series("", index=na_janela.index, dtype="object")
 
     marcador = (
         veiculo.isin(VEICULOS_MARCADORES)
@@ -141,7 +146,7 @@ def preparar(df: pd.DataFrame, dia_alvo: datetime) -> tuple[pd.DataFrame, dict]:
     ]
     marcadores = pd.Series(rotulos, dtype="object").value_counts().to_dict()
 
-    pronto = no_dia[real].rename(columns=RENOMEAR)
+    pronto = na_janela[real].rename(columns=RENOMEAR)
 
     corte = {
         "linhas_no_arquivo": total,
@@ -150,8 +155,9 @@ def preparar(df: pd.DataFrame, dia_alvo: datetime) -> tuple[pd.DataFrame, dict]:
         "fora_da_janela": fora_da_janela,
         "horario_ilegivel": horario_ilegivel,
         "veiculo_marcador": marcadores,
-        "viagens_no_dia": len(pronto),
-        "dia_alvo": inicio_dia.to_pydatetime(),
+        "viagens_na_janela": len(pronto),
+        "janela_inicio": abre.to_pydatetime(),
+        "janela_fim": fecha.to_pydatetime(),
     }
     return pronto.reset_index(drop=True), corte
 
@@ -162,8 +168,9 @@ def resumir_corte(corte: dict) -> list[str]:
         f"{corte['linhas_no_arquivo']} linhas no arquivo, "
         f"{corte['viagens']} viagens depois de juntar as escalas de motorista "
         f"({corte['linhas_de_motorista']} linhas eram do mesmo carro na mesma viagem)",
-        f"Dia alvo {corte['dia_alvo']:%d/%m/%Y}: "
-        f"{corte['viagens_no_dia']} viagens cruzam o dia",
+        f"Janela {corte['janela_inicio']:%d/%m %H:%M} a "
+        f"{corte['janela_fim']:%d/%m %H:%M}: "
+        f"{corte['viagens_na_janela']} viagens cruzam",
         f"Fora da janela: {corte['fora_da_janela']} viagem(ns)",
     ]
     if corte["horario_ilegivel"]:
