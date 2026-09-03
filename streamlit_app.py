@@ -198,43 +198,17 @@ janela = int(time.time() // INTERVALO_SEG)
 with st.spinner("Baixando, validando e desenhando…"):
     resultado = rodar(dia, corte, remoto, janela)
 
-st.title("Validação da malha SIGLA")
-
 if not resultado["ok"]:
     st.error("O pipeline não terminou. O log abaixo diz onde parou.")
     st.code(resultado["log"] or "sem saída", language="text")
     st.stop()
 
+# Título, placar e contagem por tipo foram removidos daqui a pedido do Daniel em
+# 03/09/2026: o relatório embutido logo abaixo já traz os três, e a repetição
+# empurrava a malha para fora da primeira tela. O que fica é o que o HTML não
+# tem: a versão, a hora da extração na fonte e o tempo de apuração.
 ultimo = resultado.get("ultimo", {})
 meta = ultimo.get("meta", {})
-resumo = ultimo.get("resumo", {})
-severidade = resumo.get("severidade", {})
-por_tipo = resumo.get("tipo", {})
-
-linha = st.columns(5)
-linha[0].metric("Anomalias", ultimo.get("anomalias", "-"))
-linha[1].metric("Trilhos afetados", ultimo.get("trilhos_afetados", "-"))
-linha[2].metric("Trilhos na malha", resumo.get("trilhos", "-"))
-linha[3].metric("Serviços", resumo.get("servicos", "-"))
-linha[4].metric("Viradas conferidas", resumo.get("elos", "-"))
-
-linha = st.columns(4)
-for coluna, chave, rotulo in zip(linha,
-                                 ["CRITICA", "ALTA", "MEDIA", "BAIXA"],
-                                 ["Críticas", "Altas", "Médias", "Baixas"]):
-    coluna.metric(rotulo, severidade.get(chave, 0))
-
-NOME_TIPO = {
-    "SEQUENCIA": "Trilho quebrado",
-    "VIRADA_CURTA": "Virada curta",
-    "VIRADA_LINHA_CURTA": "Virada linha curta",
-    "SOBREPOSICAO": "Sobreposição",
-    "LOCAL_FORA_DO_MAPA": "Local sem zona",
-}
-if por_tipo:
-    st.caption("Por tipo: " + " · ".join(
-        f"{NOME_TIPO.get(k, k)} {v}" for k, v in sorted(por_tipo.items(),
-                                                        key=lambda kv: -kv[1])))
 
 st.caption(
     f"Malha de {meta.get('dia_operacao', '?')} · corte {meta.get('corte', '?')} · "
