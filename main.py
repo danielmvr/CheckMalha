@@ -25,6 +25,7 @@ sys.path.insert(0, str(RAIZ / "src"))
 
 import fonte_execucao  # noqa: E402
 import fonte_remota  # noqa: E402
+from versao import VERSAO  # noqa: E402
 from localizador import Extracao, copiar_para_trabalho, escolher_mais_recente  # noqa: E402
 from normalizador import carregar_bruto, mapear_colunas, normalizar  # noqa: E402
 from relatorio import gerar, montar_dados  # noqa: E402
@@ -45,6 +46,25 @@ def aviso(texto: str) -> None:
 # diferença jogariam fora três horas de malha que ainda vai acontecer. Então a
 # hora de agora sempre vem do fuso, com o relógio cru só como último recurso.
 FUSO_PADRAO = "America/Sao_Paulo"
+
+
+def _hora_arquivo(caminho: Path, fuso: str | None = None) -> str:
+    """Data de modificação do arquivo, no fuso da operação.
+
+    Para a fonte remota isso é a hora em que a extração foi gerada, porque o
+    download carimba o cache com o Last-Modified da fonte.
+    """
+    try:
+        marca = caminho.stat().st_mtime
+    except OSError:
+        return "?"
+    try:
+        from zoneinfo import ZoneInfo
+
+        quando = datetime.fromtimestamp(marca, ZoneInfo(fuso or FUSO_PADRAO))
+    except Exception:
+        quando = datetime.fromtimestamp(marca)
+    return quando.strftime("%d/%m/%Y %H:%M")
 
 
 def _agora(fuso: str | None = None) -> datetime:
@@ -94,7 +114,9 @@ def etapa(numero: int, texto: str) -> None:
 
 
 def main() -> int:
-    analise = argparse.ArgumentParser(description="Valida trilhos e viradas da malha.")
+    analise = argparse.ArgumentParser(
+        description=f"Valida trilhos e viradas da malha. Versão {VERSAO}.")
+    analise.add_argument("--versao", action="version", version=f"malha {VERSAO}")
     analise.add_argument("--pasta", help="pasta onde procurar a extração mais recente")
     analise.add_argument("--arquivo", help="usar este arquivo em vez de procurar")
     analise.add_argument("--sem-abrir", action="store_true", help="não abrir o navegador")
@@ -291,7 +313,9 @@ def main() -> int:
 
     etapa(5, "Gerando o relatório")
     meta = {
+        "versao": VERSAO,
         "dia_operacao": extracao.rotulo_data,
+        "extracao_em": _hora_arquivo(extracao.caminho, caminhos.get("fuso")),
         "corte": f"{corte:%d/%m/%Y %H:%M}" if corte else "sem corte",
         "arquivo_origem": extracao.caminho.name,
         "arquivo_trabalho": copia.name,

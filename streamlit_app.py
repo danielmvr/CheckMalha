@@ -37,6 +37,9 @@ SAIDA = RAIZ / "saida"
 INTERVALO_SEG = 600
 VARIAVEL_URL = "SIGLA_EXECUCAO_URL"
 
+sys.path.insert(0, str(RAIZ / "src"))
+from versao import VERSAO  # noqa: E402
+
 
 def _sem_runtime() -> bool:
     """True quando o arquivo foi chamado com `python`, e não com `streamlit run`.
@@ -72,7 +75,7 @@ st.set_page_config(
     page_title="Malha SIGLA, validação",
     page_icon="🚌",
     layout="wide",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="collapsed",
 )
 
 
@@ -150,12 +153,9 @@ except ImportError:
 
 with st.sidebar:
     st.header("Fonte")
-    remoto = st.toggle("Baixar do link compartilhado", value=TEM_URL,
-                       help="Desligado, usa o execucao.XLS que estiver na pasta "
-                            "do projeto.")
-    if remoto and not TEM_URL:
-        st.warning(f"Nenhuma URL configurada. Ponha {VARIAVEL_URL} nos Secrets "
-                   "do app ou na variável de ambiente.")
+    remoto = st.toggle("Baixar do link compartilhado", value=True,
+                       help="É o padrão. Desligado, usa o execucao.XLS que "
+                            "estiver na pasta do projeto.")
 
     st.header("Recorte")
     hoje = st.checkbox("Dia de hoje", value=True)
@@ -179,12 +179,20 @@ with st.sidebar:
         corte = hora.strftime("%H:%M")
 
     st.divider()
-    if st.button("Atualizar agora", use_container_width=True):
-        st.cache_data.clear()
-        st.rerun()
     st.caption(f"Atualização automática a cada {INTERVALO_SEG // 60} min: "
                + ("ligada" if AUTO else "DESLIGADA, falta o pacote "
                                         "streamlit-autorefresh"))
+
+st.caption(f"v{VERSAO}")
+
+if remoto and not TEM_URL:
+    st.error(
+        f"Nenhuma URL configurada, e a fonte está no link compartilhado. "
+        f"Ponha {VARIAVEL_URL} nos Secrets do app, ou desligue "
+        f"\"Baixar do link compartilhado\" na barra lateral para usar o "
+        f"execucao.XLS da pasta."
+    )
+    st.stop()
 
 janela = int(time.time() // INTERVALO_SEG)
 with st.spinner("Baixando, validando e desenhando…"):
@@ -230,9 +238,9 @@ if por_tipo:
 
 st.caption(
     f"Malha de {meta.get('dia_operacao', '?')} · corte {meta.get('corte', '?')} · "
-    f"gerado em {meta.get('gerado_em', '?')} · extração "
-    f"{meta.get('arquivo_origem', '?')} · apurado em "
-    f"{resultado['segundos']:.0f} s"
+    f"**extração gerada em {meta.get('extracao_em', '?')}** · relatório gerado em "
+    f"{meta.get('gerado_em', '?')} · fonte {meta.get('arquivo_origem', '?')} · "
+    f"apurado em {resultado['segundos']:.0f} s"
 )
 
 with st.expander("Como este número foi apurado"):

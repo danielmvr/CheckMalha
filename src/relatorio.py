@@ -164,6 +164,7 @@ def montar_dados(resultado: dict, meta: dict, descartados: list[dict],
     por_tipo: dict[str, int] = {}
     mapa_empresas = _mapa_empresas()
     por_empresa: dict[str, int] = {}
+    por_empresa_anomalia: dict[str, int] = {}
     trilhos_saida = []
 
     for trilho, pedacos_do_trilho in zip(trilhos, pedacos_por_trilho):
@@ -235,6 +236,8 @@ def montar_dados(resultado: dict, meta: dict, descartados: list[dict],
 
         empresa = _empresa(trilho["nome"], trilho["servicos"], mapa_empresas)
         por_empresa[empresa] = por_empresa.get(empresa, 0) + 1
+        if trilho["total_anomalias"]:
+            por_empresa_anomalia[empresa] = por_empresa_anomalia.get(empresa, 0) + 1
 
         trilhos_saida.append({
             "nome": trilho["nome"],
@@ -267,11 +270,16 @@ def montar_dados(resultado: dict, meta: dict, descartados: list[dict],
             "severidade": contagem,
             "tipo": por_tipo,
             "empresas": por_empresa,
+            "empresas_com_anomalia": por_empresa_anomalia,
             "empresas_ordem": mapa_empresas.get("ordem", []),
             "empresas_rotulos": mapa_empresas.get("rotulos", {}),
             "descartados": len(descartados),
             "classificacao": resultado.get("classificacao", {}),
         },
+        # Só trilho com anomalia vai para o payload. Trilho limpo não tem o que
+        # revisar, e mandar todos multiplicava o tamanho do HTML por vinte: no
+        # dia 03/09 eram 334 trilhos para 15 com anomalia. Os totais da malha
+        # continuam certos porque o resumo é contado antes deste corte.
         "locais_fora_do_mapa": resultado["locais_fora_do_mapa"],
         "descartados": [
             {
@@ -282,7 +290,7 @@ def montar_dados(resultado: dict, meta: dict, descartados: list[dict],
             }
             for d in descartados[:200]
         ],
-        "trilhos": trilhos_saida,
+        "trilhos": [t for t in trilhos_saida if t["total"]],
     }
 
 

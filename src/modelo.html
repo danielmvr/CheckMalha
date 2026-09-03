@@ -45,6 +45,11 @@ body{
   font-size:11px;letter-spacing:.18em;text-transform:uppercase;
   color:var(--tinta-fraca);margin-bottom:10px;
 }
+.versao{
+  display:inline-block;margin-right:10px;padding:1px 6px;
+  border:1px solid var(--regua);border-radius:3px;
+  letter-spacing:.06em;color:var(--tinta);background:var(--carta);
+}
 .capa h1{
   font-family:var(--display);
   font-size:clamp(38px,5.6vw,68px);
@@ -322,7 +327,6 @@ button.marcador:hover{background:#F5F8FB}
     <button class="ficha" data-tipo="VIRADA_LINHA_CURTA" aria-pressed="false">Virada linha curta</button>
     <button class="ficha" data-tipo="SOBREPOSICAO" aria-pressed="false">Sobreposição</button>
     <button class="ficha" data-tipo="LOCAL_FORA_DO_MAPA" aria-pressed="false">Local sem zona</button>
-    <button class="ficha" id="mostrarTodos" aria-pressed="false">Mostrar trilhos sem anomalia</button>
     <button class="ficha" id="limpar">Limpar filtros</button>
     <button class="ficha" id="exportar">Baixar CSV</button>
     <span class="contagem-visivel" id="contagemVisivel"></span>
@@ -375,8 +379,7 @@ const NOME_TIPO = {
 };
 const INTERNAS = ["MANUTENCAO","RESERVA","TRANSFERENCIA","ABASTECIMENTO"];
 
-const estado = {texto:"", tipos:new Set(), empresas:new Set(),
-                severidade:null, mostrarTodos:false};
+const estado = {texto:"", tipos:new Set(), empresas:new Set(), severidade:null};
 
 const $ = s => document.querySelector(s);
 const esc = t => String(t ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -384,9 +387,12 @@ const esc = t => String(t ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;
 /* cabeçalho */
 (function capa(){
   const m = DADOS.meta, r = DADOS.resumo;
-  $("#sobrenome").textContent = "Malha de " + m.dia_operacao + " · gerado em " + m.gerado_em;
+  $("#sobrenome").innerHTML =
+    '<span class="versao">v' + esc(m.versao || "?") + "</span>" +
+    "Malha de " + esc(m.dia_operacao) + " · gerado em " + esc(m.gerado_em);
   $("#procedencia").innerHTML = [
     ["Extração", m.arquivo_origem],
+    ["Extração gerada em", m.extracao_em || "?"],
     ["Cópia de trabalho", m.arquivo_trabalho],
     ["Janela", DADOS.eixo.inicio + " a " + DADOS.eixo.fim],
     ["Corte", m.corte || "sem corte"],
@@ -438,14 +444,14 @@ const esc = t => String(t ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;
   const caixa = $("#controlesEmpresa");
   if(!caixa) return;
 
+  // Vem do resumo, e não dos trilhos, porque o payload só traz os com anomalia.
+  const naMalha = DADOS.resumo.empresas || {};
+  const comAnomalia = DADOS.resumo.empresas_com_anomalia || {};
   const contagem = new Map();
-  DADOS.trilhos.forEach(t => {
-    const nome = t.empresa || "OUTRAS";
-    if(!contagem.has(nome)) contagem.set(nome, {total:0, comAnomalia:0});
-    const c = contagem.get(nome);
-    c.total++;
-    if(t.total) c.comAnomalia++;
-  });
+  Object.keys(naMalha).forEach(nome => contagem.set(nome, {
+    total: naMalha[nome] || 0,
+    comAnomalia: comAnomalia[nome] || 0,
+  }));
 
   const rotulos = DADOS.resumo.empresas_rotulos || {};
   const ordem = (DADOS.resumo.empresas_ordem || []).filter(e => contagem.has(e));
@@ -482,8 +488,7 @@ function problemasDoTrilho(t){
 }
 
 function passaFiltro(t){
-  // Uma busca digitada é um pedido explícito, então ela alcança trilhos limpos também.
-  if(!estado.mostrarTodos && !estado.texto && t.total === 0) return false;
+  // O payload só traz trilho com anomalia, então não há trilho limpo para filtrar.
   if(estado.empresas.size && !estado.empresas.has(t.empresa || "OUTRAS")) return false;
   const casos = problemasDoTrilho(t);
   if(estado.tipos.size && !casos.some(c => estado.tipos.has(c.problema.tipo))) return false;
@@ -618,14 +623,15 @@ function desenhar(){
       (semAnomalia
         ? "Os " + DADOS.resumo.trilhos + " trilhos de " + esc(DADOS.meta.dia_operacao) +
           " fecham destino com origem e respeitam a virada mínima."
-        : "Ajuste a busca ou use Limpar filtros para ver a malha inteira.") +
+        : "Ajuste a busca ou use Limpar filtros para ver todas as anomalias.") +
       "</span></div>";
   } else {
     lista.innerHTML = visiveis.map(trilhoHTML).join("");
   }
 
   $("#contagemVisivel").textContent =
-    visiveis.length + " de " + DADOS.trilhos.length + " trilhos na tela";
+    visiveis.length + " de " + DADOS.trilhos.length + " trilhos com anomalia" +
+    " · " + DADOS.resumo.trilhos + " na malha";
 }
 
 /* interação */
@@ -643,15 +649,9 @@ document.querySelectorAll(".ficha[data-tipo]").forEach(botao => {
   });
 });
 
-$("#mostrarTodos").addEventListener("click", () => {
-  estado.mostrarTodos = !estado.mostrarTodos;
-  $("#mostrarTodos").setAttribute("aria-pressed", String(estado.mostrarTodos));
-  desenhar();
-});
-
 $("#limpar").addEventListener("click", () => {
   estado.texto = ""; estado.tipos.clear(); estado.empresas.clear();
-  estado.severidade = null; estado.mostrarTodos = false;
+  estado.severidade = null;
   $("#busca").value = "";
   document.querySelectorAll('.ficha[aria-pressed]').forEach(b => b.setAttribute("aria-pressed","false"));
   document.querySelectorAll("button.marcador").forEach(b => b.setAttribute("aria-pressed","false"));

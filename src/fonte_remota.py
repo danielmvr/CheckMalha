@@ -33,6 +33,7 @@ from __future__ import annotations
 
 import os
 import re
+from email.utils import parsedate_to_datetime
 from pathlib import Path
 
 from arquivos import substituir as _substituir
@@ -100,6 +101,23 @@ def urls_candidatas(url: str) -> list[tuple[str, str]]:
     return saida
 
 
+def _hora_da_fonte(resposta) -> float | None:
+    """Epoch do Last-Modified, que é a hora em que o arquivo foi gerado na fonte.
+
+    Sem isso, a data do cache seria a hora do download, e o relatório mostraria
+    a hora em que ele baixou em vez da hora em que a extração saiu do SIGLA.
+    Last-Modified vem em GMT e o valor devolvido é absoluto, sem fuso, então
+    quem formata decide em que hora local mostrar.
+    """
+    bruto = resposta.headers.get("Last-Modified")
+    if not bruto:
+        return None
+    try:
+        return parsedate_to_datetime(bruto).timestamp()
+    except (TypeError, ValueError):
+        return None
+
+
 def _e_planilha(inicio: bytes) -> str | None:
     for assinatura, nome in ASSINATURAS.items():
         if inicio.startswith(assinatura):
@@ -156,6 +174,7 @@ def baixar(url: str, destino: str | Path, timeout: int = 90) -> dict:
 
         formato = _e_planilha(primeiro)
         tamanho = parcial.stat().st_size
+        marca = _hora_da_fonte(resposta)
         if not formato:
             # Se não der para apagar o parcial, não importa: ele é sobrescrito na
             # próxima tentativa. O que não pode é a limpeza engolir o
@@ -171,6 +190,14 @@ def baixar(url: str, destino: str | Path, timeout: int = 90) -> dict:
                          "Sintoma de link que pede login."),
             })
             continue
+
+        if marca is not None:
+            # A data do cache passa a ser a da fonte, e não a do download. O
+            # localizador e o relatório leem daqui.
+            try:
+                os.utime(parcial, (marca, marca))
+            except OSError:
+                marca = None
 
         falha = _substituir(parcial, destino)
         if falha:
@@ -189,7 +216,7 @@ def baixar(url: str, destino: str | Path, timeout: int = 90) -> dict:
         tentativas.append({"estrategia": rotulo, "erro": None})
         return {"ok": True, "estrategia": rotulo, "formato": formato,
                 "bytes": tamanho, "destino": str(destino),
-                "tentativas": tentativas, "erro": None}
+                "hora_fonte": marca, "tentativas": tentativas, "erro": None}
 
     return {"ok": False, "estrategia": None, "formato": None, "bytes": 0,
             "destino": str(destino), "tentativas": tentativas,
@@ -203,8 +230,12 @@ def _milhar(numero: int) -> str:
 def resumir(relatorio: dict) -> list[str]:
     """Linhas de texto para o main.py e para o app mostrarem o que aconteceu."""
     if relatorio.get("ok"):
-        return [f"Baixado pelo link ({relatorio['estrategia']}): "
-                f"{_milhar(relatorio['bytes'])} bytes, {relatorio['formato']}"]
+        linhas = [f"Baixado pelo link ({relatorio['estrategia']}): "
+                  f"{_milhar(relatorio['bytes'])} bytes, {relatorio['formato']}"]
+        if not relatorio.get("hora_fonte"):
+            linhas.append("A fonte não informou Last-Modified, então a hora da "
+                          "extração vai sair como a hora do download.")
+        return linhas
     linhas = [f"Download pelo link falhou: {relatorio.get('erro')}"]
     for tentativa in relatorio.get("tentativas", []):
         if tentativa.get("erro"):
