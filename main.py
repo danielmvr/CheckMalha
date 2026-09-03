@@ -1,0 +1,342 @@
+"""
+Validação da malha do SIGLA.
+
+Uso:
+    python main.py
+    python main.py --pasta "C:\\Users\\daniel.reis\\Desktop"
+    python main.py --arquivo "C:\\caminho\\SIGLA_Relatorio_21-05-2026.xlsx"
+    python main.py --sem-abrir
+
+Nada é escrito na pasta da extração. O arquivo bruto é copiado para
+dados_trabalho e o relatório sai em saida/.
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import sys
+import webbrowser
+from datetime import datetime
+from pathlib import Path
+
+RAIZ = Path(__file__).resolve().parent
+sys.path.insert(0, str(RAIZ / "src"))
+
+import fonte_execucao  # noqa: E402
+import fonte_remota  # noqa: E402
+from localizador import Extracao, copiar_para_trabalho, escolher_mais_recente  # noqa: E402
+from normalizador import carregar_bruto, mapear_colunas, normalizar  # noqa: E402
+from relatorio import gerar, montar_dados  # noqa: E402
+from validador import (ClassificadorServico, LinhasCurtas,  # noqa: E402
+                       MapaZonas, RegrasVirada, validar)
+
+CONFIG = RAIZ / "config"
+TRABALHO = RAIZ / "dados_trabalho"
+SAIDA = RAIZ / "saida"
+
+
+def aviso(texto: str) -> None:
+    print(f"  {texto}")
+
+
+# O corte é comparado com horário de operação, que é hora de Brasília. O relógio
+# da máquina pode não ser: contêiner e nuvem rodam em UTC, e três horas de
+# diferença jogariam fora três horas de malha que ainda vai acontecer. Então a
+# hora de agora sempre vem do fuso, com o relógio cru só como último recurso.
+FUSO_PADRAO = "America/Sao_Paulo"
+
+
+def _agora(fuso: str | None = None) -> datetime:
+    nome = fuso or FUSO_PADRAO
+    try:
+        from zoneinfo import ZoneInfo
+
+        return datetime.now(ZoneInfo(nome)).replace(tzinfo=None)
+    except Exception:
+        return datetime.now()
+
+
+def _resolver_corte(pedido: str, dia_alvo: datetime | None,
+                    fuso: str | None = None) -> datetime | None | bool:
+    """Hora a partir da qual a malha ainda pode mudar. False quando o pedido é inválido.
+
+    Malha que já rodou não pode mais ser alterada, então serviço que terminou
+    antes do corte não serve para esta análise. O padrão é a hora da geração.
+
+    Num dia alvo que já passou o corte por 'agora' zeraria o relatório inteiro,
+    então ele é desligado sozinho e o motivo aparece na tela. É o que mantém o
+    autoteste do exemplo sintético, de maio, funcionando.
+    """
+    escolha = (pedido or "").strip().lower()
+    if escolha in ("nao", "não", "no", "off", "sem", "-"):
+        return None
+
+    agora = _agora(fuso)
+    if escolha in ("agora", "hoje", "now", ""):
+        if dia_alvo and dia_alvo.date() < agora.date():
+            aviso(f"Corte desligado: o dia alvo {dia_alvo:%d/%m/%Y} já passou, "
+                  f"cortar pela hora de agora não deixaria nada.")
+            return None
+        return agora
+
+    try:
+        hora = datetime.strptime(escolha, "%H:%M").time()
+    except ValueError:
+        aviso(f"Corte inválido: {pedido}. Use HH:MM, 'agora' ou 'nao'.")
+        return False
+    base = dia_alvo or agora
+    return datetime.combine(base.date(), hora)
+
+
+def etapa(numero: int, texto: str) -> None:
+    print(f"\n[{numero}] {texto}")
+
+
+def main() -> int:
+    analise = argparse.ArgumentParser(description="Valida trilhos e viradas da malha.")
+    analise.add_argument("--pasta", help="pasta onde procurar a extração mais recente")
+    analise.add_argument("--arquivo", help="usar este arquivo em vez de procurar")
+    analise.add_argument("--sem-abrir", action="store_true", help="não abrir o navegador")
+    analise.add_argument("--dia", help="dia alvo DD/MM/AAAA, só para o relatório "
+                                       "execucao. Padrão: hoje")
+    analise.add_argument("--url", help="URL do link compartilhado do execucao.XLS. "
+                                      "Sem isto, vale a variável de ambiente "
+                                      "SIGLA_EXECUCAO_URL ou execucao_url no "
+                                      "config/caminhos.json")
+    analise.add_argument("--remoto", action="store_true",
+                         help="baixar o execucao.XLS do link antes de validar")
+    analise.add_argument("--corte", default="agora",
+                         help="hora de corte HH:MM. Serviço que já terminou antes "
+                              "dela sai da análise, porque malha passada não muda "
+                              "mais. 'agora' usa a hora da geração, 'nao' desliga. "
+                              "Padrão: agora")
+    args = analise.parse_args()
+
+    with open(CONFIG / "caminhos.json", encoding="utf-8") as arquivo:
+        caminhos = json.load(arquivo)
+
+    etapa(1, "Procurando a extração mais recente")
+    if args.remoto or args.url:
+        url = fonte_remota.resolver_url(args.url, caminhos)
+        if not url:
+            aviso("Nenhuma URL configurada para o execucao.XLS.")
+            aviso(f"Defina a variável de ambiente {fonte_remota.VARIAVEL_AMBIENTE}, "
+                  "ou passe --url, ou preencha 'execucao_url' no "
+                  "config/caminhos.json.")
+            return 1
+        cache = Path(caminhos.get("execucao_cache")
+                     or "dados_trabalho/remoto/execucao.XLS").expanduser()
+        if not cache.is_absolute():
+            cache = RAIZ / cache
+        aviso(f"Link compartilhado, gravando em {cache.name}")
+        entrega = fonte_remota.baixar(url, cache)
+        for linha in fonte_remota.resumir(entrega):
+            aviso(linha)
+        if not entrega["ok"]:
+            if cache.exists():
+                aviso("Seguindo com a cópia anterior do cache, que pode estar velha.")
+                args.arquivo = str(cache)
+            else:
+                return 1
+        else:
+            args.arquivo = str(cache)
+
+    if args.arquivo:
+        origem = Path(args.arquivo).expanduser()
+        if not origem.exists():
+            aviso(f"Arquivo não encontrado: {origem}")
+            return 1
+        extracao = Extracao(
+            caminho=origem,
+            data_operacao=None,
+            versao=1,
+            modificado_em=datetime.fromtimestamp(origem.stat().st_mtime),
+        )
+        from localizador import _extrair_data, _extrair_versao
+
+        extracao.data_operacao = _extrair_data(origem.name)
+        extracao.versao = _extrair_versao(origem.name)
+    else:
+        pasta = Path(args.pasta or caminhos["pasta_extracoes"]).expanduser()
+        try:
+            extracao = escolher_mais_recente(pasta, caminhos.get("prefixo_arquivo", ""))
+        except FileNotFoundError as erro:
+            aviso(str(erro))
+            aviso("Ajuste 'pasta_extracoes' em config/caminhos.json ou use --pasta.")
+            return 1
+
+    aviso(f"Arquivo:  {extracao.caminho.name}")
+    aviso(f"Dia:      {extracao.rotulo_data}")
+    aviso(f"Versão:   v{extracao.versao}, modificado em "
+          f"{extracao.modificado_em:%d/%m/%Y %H:%M}")
+
+    etapa(2, "Copiando para dados_trabalho")
+    try:
+        copia = copiar_para_trabalho(extracao, TRABALHO)
+    except OSError as erro:
+        aviso(str(erro))
+        return 1
+    aviso(str(copia.relative_to(RAIZ)))
+
+    etapa(3, "Lendo e normalizando")
+    bruto = carregar_bruto(copia)
+
+    dia_alvo = None
+    if fonte_execucao.e_execucao(bruto):
+        primeira, ultima = fonte_execucao.periodo(bruto)
+        aviso("Fonte: relatório execucao do SIGLA, malha em texto")
+        if primeira and ultima:
+            aviso(f"Janela do arquivo: {primeira:%d/%m/%Y} a {ultima:%d/%m/%Y}")
+
+        if args.dia:
+            try:
+                dia_alvo = datetime.strptime(args.dia, "%d/%m/%Y")
+            except ValueError:
+                aviso(f"Dia alvo inválido: {args.dia}. Use DD/MM/AAAA.")
+                return 1
+        else:
+            dia_alvo = _agora(caminhos.get("fuso")).replace(
+                hour=0, minute=0, second=0, microsecond=0)
+            aviso(f"Dia alvo não informado, usando hoje. Use --dia para escolher.")
+
+        if primeira and ultima and not (primeira.date() <= dia_alvo.date() <= ultima.date()):
+            aviso(f"Dia alvo {dia_alvo:%d/%m/%Y} está fora da janela do arquivo.")
+            aviso("Gere o relatório cobrindo esse dia, ou escolha outro com --dia.")
+            return 1
+
+        bruto, corte = fonte_execucao.preparar(bruto, dia_alvo)
+        for linha in fonte_execucao.resumir_corte(corte):
+            aviso(linha)
+        if bruto.empty:
+            aviso("Nenhuma viagem sobrou depois do recorte.")
+            return 1
+        extracao.data_operacao = dia_alvo
+
+    corte = _resolver_corte(args.corte, extracao.data_operacao, caminhos.get("fuso"))
+    if corte is False:
+        return 1
+
+    mapa_colunas, faltando = mapear_colunas(bruto)
+    aviso(f"{len(bruto)} linhas, {len(bruto.columns)} colunas")
+    aviso("Colunas reconhecidas: " +
+          ", ".join(f"{k} <- {v}" for k, v in mapa_colunas.items()))
+
+    if faltando:
+        aviso("")
+        aviso(f"Faltam colunas obrigatórias: {', '.join(faltando)}")
+        aviso("A extração precisa trazer, no mínimo: trilho, origem, destino e hora de")
+        aviso("início de cada serviço. Sem origem e destino não dá para conferir se o")
+        aviso("trilho fecha. Acrescente esses campos no extrator e rode de novo.")
+        aviso("Se as colunas existem com outro nome, inclua o nome em APELIDOS_COLUNA")
+        aviso("dentro de src/normalizador.py.")
+        return 1
+
+    registros, descartados = normalizar(bruto, mapa_colunas, extracao.data_operacao)
+    aviso(f"{len(registros)} serviços válidos, {len(descartados)} sem dados suficientes")
+
+    if not registros:
+        aviso("Nenhum serviço utilizável. Confira a extração.")
+        return 1
+
+    if corte is not None:
+        antes = len(registros)
+        registros = [r for r in registros if (r["fim"] or r["inicio"]) >= corte]
+        aviso(f"Corte em {corte:%d/%m %H:%M}: {antes - len(registros)} serviço(s) já "
+              f"terminados ficaram fora, {len(registros)} seguem para a análise")
+        if not registros:
+            aviso("Nada depois do corte. Use --corte nao para ver o dia inteiro.")
+            return 1
+
+    etapa(4, "Aplicando as regras")
+    zonas = MapaZonas.de_arquivo(CONFIG / "zonas.json")
+    regras = RegrasVirada.de_arquivo(CONFIG / "regras_virada.json")
+    classes = ClassificadorServico.de_arquivo(CONFIG / "regras_virada.json")
+    linhas_curtas = LinhasCurtas.de_arquivo(CONFIG / "regras_virada.json", zonas)
+    aviso(f"Virada mínima: {regras.minimo_padrao:.0f} min, "
+          f"tolerância {regras.tolerancia:.0f} min, "
+          f"{len(regras.excecoes)} exceção(ões) ativa(s)")
+    if zonas.garagens_ativas:
+        aviso(f"Garagens: regra ativa, {len(zonas.catalogo)} siglas no catálogo")
+    elif zonas.catalogo_erro:
+        aviso(f"Garagens: DESLIGADA, catálogo não foi lido. {zonas.catalogo_erro}")
+        aviso("  GBSB e BSB serão tratados como lugares diferentes.")
+    else:
+        aviso("Garagens: regra desligada em config/zonas.json")
+
+    if classes.ativa:
+        aviso(f"Serviço: cenário '{classes.cenario}', {classes.descricao}")
+    else:
+        aviso("Serviço: classificação DESLIGADA, virada cobrada de tudo")
+
+    if linhas_curtas.ativa:
+        aviso(f"Linhas curtas: {len(linhas_curtas.pares)} pares, viagem até "
+              f"{linhas_curtas.duracao_maxima:.0f} min, virada apertada nelas sai "
+              f"como VIRADA_LINHA_CURTA")
+
+    resultado = validar(registros, zonas, regras, classes, linhas_curtas)
+    cls_info = resultado["classificacao"]
+    if cls_info["ativa"]:
+        aviso(f"  {cls_info['servicos']} serviços comerciais, "
+              f"{cls_info['blocos_internos']} blocos internos "
+              f"(manutenção, revisão, sem número)")
+        aviso(f"  {cls_info['fora_do_encadeamento']} bloco(s) fora do encadeamento, "
+              f"aparecem na linha do tempo mas não geram anomalia")
+    total = sum(t["total_anomalias"] for t in resultado["trilhos"])
+    afetados = sum(1 for t in resultado["trilhos"] if t["total_anomalias"])
+    aviso(f"{total} anomalia(s) em {afetados} de {len(resultado['trilhos'])} trilhos")
+    if resultado["locais_fora_do_mapa"]:
+        aviso("Locais sem zona cadastrada: " +
+              ", ".join(resultado["locais_fora_do_mapa"]))
+
+    etapa(5, "Gerando o relatório")
+    meta = {
+        "dia_operacao": extracao.rotulo_data,
+        "corte": f"{corte:%d/%m/%Y %H:%M}" if corte else "sem corte",
+        "arquivo_origem": extracao.caminho.name,
+        "arquivo_trabalho": copia.name,
+        "gerado_em": _agora(caminhos.get("fuso")).strftime("%d/%m/%Y %H:%M"),
+        "minimo_virada": f"{regras.minimo_padrao:.0f} min",
+    }
+    dados = montar_dados(resultado, meta, descartados,
+                         dia_alvo=extracao.data_operacao)
+
+    # Nome fixo, um relatório por dia de operação, sobrescrito a cada execução.
+    # Com carimbo de hora e uma rodada a cada 10 minutos, a pasta saida crescia
+    # 144 arquivos por dia dentro do OneDrive.
+    sufixo = (extracao.data_operacao.strftime("%Y-%m-%d")
+              if extracao.data_operacao else "sem-data")
+    destino = SAIDA / f"malha_{sufixo}.html"
+    try:
+        gerar(dados, destino)
+    except OSError as erro:
+        aviso(str(erro))
+        aviso("Feche o relatório no navegador ou no Excel e rode de novo.")
+        return 1
+    aviso(str(destino.relative_to(RAIZ)))
+
+    # Resumo em JSON ao lado do HTML. É o que o app do Streamlit lê para mostrar
+    # os números sem precisar abrir o relatório nem repetir o pipeline.
+    ultimo = {
+        "meta": dados["meta"],
+        "resumo": dados["resumo"],
+        "locais_fora_do_mapa": dados["locais_fora_do_mapa"],
+        "relatorio": destino.name,
+        "relatorio_caminho": str(destino),
+        "anomalias": total,
+        "trilhos_afetados": afetados,
+        "gerado_em_iso": _agora(caminhos.get("fuso")).isoformat(timespec="seconds"),
+    }
+    (SAIDA / "ultimo.json").write_text(
+        json.dumps(ultimo, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    abrir = caminhos.get("abrir_ao_terminar", True) and not args.sem_abrir
+    if abrir:
+        webbrowser.open(destino.resolve().as_uri())
+
+    print(f"\nPronto. {total} anomalia(s) para revisar.\n")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -1,0 +1,237 @@
+{
+  "_origem": [
+    "Reconstruído a partir do artefato Zonas de Localidade.",
+    "12 zonas, 40 códigos. Os números em _usos são as ocorrências como origem ou",
+    "destino comercial na malha analisada, e servem para você saber o peso de cada",
+    "código antes de mexer no agrupamento.",
+    "Códigos que aparecerem na extração e não estiverem aqui caem na seção",
+    "'Locais fora do mapa' do relatório.",
+    "",
+    "Atualização de 27/08/2026, pela coordenação: CSV entrou na ZONA_VLA, RPP entrou",
+    "na ZONA_BSB, e a ZONA_VAS foi criada com VAS e MOZ. Os _usos desses quatro",
+    "códigos vêm do execucao.xls, janela de 24/08 a 01/09, e não da malha antiga,",
+    "então não são comparáveis com os demais.",
+    "",
+    "Atualização de 02/09/2026, pela coordenação: ZONA_PGR criada com PGR, SSZ e SVT.",
+    "Os _usos vêm do execucao.XLS, dia alvo 02/09/2026.",
+    "PEST entrou na ZONA_JDF em 02/09/2026, pela coordenação."
+  ],
+  "zonas": {
+    "ZONA_RIO": {
+      "nome": "Zona RIO",
+      "locais": [
+        "RIO",
+        "QNT",
+        "GRC",
+        "BBT",
+        "GIG",
+        "MDG",
+        "GCE",
+        "CNE"
+      ],
+      "_usos": {
+        "RIO": 2691,
+        "QNT": 391,
+        "GRC": 100,
+        "BBT": 86,
+        "GIG": 84,
+        "MDG": 80,
+        "GCE": 10,
+        "CNE": 6
+      },
+      "_nota": "GCE tem 2211 usos como garagem contra 10 comerciais. RIO tem 19 de garagem."
+    },
+    "ZONA_BSB": {
+      "nome": "Zona BSB",
+      "locais": [
+        "BSB",
+        "TAG",
+        "GMA",
+        "RPP"
+      ],
+      "_usos": {
+        "BSB": 841,
+        "TAG": 87,
+        "GMA": 43,
+        "RPP": 11
+      },
+      "_nota": "BSB tem 12 usos como garagem."
+    },
+    "ZONA_GYN": {
+      "nome": "Zona GYN",
+      "locais": [
+        "GYN",
+        "APS"
+      ],
+      "_usos": {
+        "GYN": 847,
+        "APS": 93
+      },
+      "_nota": "GYN tem 33 usos como garagem, APS tem 28."
+    },
+    "ZONA_BHZ": {
+      "nome": "Zona BHZ",
+      "locais": [
+        "BHZ",
+        "TJK",
+        "BTI"
+      ],
+      "_usos": {
+        "BHZ": 627,
+        "TJK": 163,
+        "BTI": 86
+      },
+      "_nota": "BHZ tem 40 usos como garagem."
+    },
+    "ZONA_JDF": {
+      "nome": "Zona JDF",
+      "locais": [
+        "JDF",
+        "GJF",
+        "JFA",
+        "PEST"
+      ],
+      "_usos": {
+        "JDF": 684,
+        "GJF": 79,
+        "JFA": 11,
+        "PEST": 4
+      },
+      "_nota": "JDF tem 192 usos como garagem. PEST entrou em 02/09/2026 pela coordenação, contagem do execucao.XLS do dia 02/09/2026."
+    },
+    "ZONA_VLA": {
+      "nome": "Zona VLA",
+      "locais": [
+        "VLA",
+        "RDF",
+        "CSV"
+      ],
+      "_usos": {
+        "VLA": 583,
+        "RDF": 12,
+        "CSV": 2
+      }
+    },
+    "ZONA_SAO": {
+      "nome": "Zona SAO",
+      "locais": [
+        "SAO",
+        "QCV"
+      ],
+      "_usos": {
+        "SAO": 352,
+        "QCV": 41
+      },
+      "_nota": "SAO tem 110 usos como garagem."
+    },
+    "ZONA_BMA": {
+      "nome": "Zona BMA",
+      "locais": [
+        "BMA",
+        "QVR",
+        "QRZ"
+      ],
+      "_usos": {
+        "BMA": 332,
+        "QVR": 42,
+        "QRZ": 8
+      },
+      "_nota": "QVR tem 31 usos como garagem."
+    },
+    "ZONA_SJK": {
+      "nome": "Zona SJK",
+      "locais": [
+        "SJK",
+        "QMI",
+        "JCE"
+      ],
+      "_usos": {
+        "SJK": 231,
+        "QMI": 104,
+        "JCE": 5
+      }
+    },
+    "ZONA_OPO": {
+      "nome": "Zona OPO",
+      "locais": [
+        "MRI",
+        "OPO",
+        "OBR"
+      ],
+      "_usos": {
+        "MRI": 77,
+        "OPO": 76,
+        "OBR": 0
+      },
+      "_nota": "OBR está cadastrado na zona mas não teve uso comercial nem de garagem nesta malha."
+    },
+    "ZONA_VAS": {
+      "nome": "Zona VAS",
+      "locais": [
+        "VAS",
+        "MOZ"
+      ],
+      "_usos": {
+        "VAS": 44,
+        "MOZ": 3
+      },
+      "_nota": "Zona criada em 27/08/2026 pela coordenação. Contagens do execucao.xls."
+    },
+    "ZONA_PGR": {
+      "nome": "Zona PGR",
+      "locais": [
+        "PGR",
+        "SSZ",
+        "SVT"
+      ],
+      "_usos": {
+        "PGR": 18,
+        "SSZ": 9,
+        "SVT": 4
+      },
+      "_nota": "Zona criada em 02/09/2026 pela coordenação. Contagens do execucao.XLS, dia 02/09/2026."
+    }
+  },
+  "apelidos": {
+    "_leia": [
+      "Use aqui os casos em que a extração escreve o local de outro jeito.",
+      "Formato: COMO VEM NA EXTRACAO para CODIGO DO LOCAL. Exemplo: NOVO RIO para RIO.",
+      "Está vazio de propósito. Preencha só com equivalências confirmadas,",
+      "porque um apelido errado esconde uma quebra de trilho real."
+    ]
+  },
+  "garagens": {
+    "_leia": [
+      "Garagem começa com G e vale como o local sem o G. GBSB é a garagem de",
+      "BSB, GSSA é a garagem de SSA. Para o encadeamento do trilho os dois são",
+      "o mesmo lugar.",
+      "",
+      "A regra só se aplica quando o código sem o G existe no catálogo oficial",
+      "de siglas. É isso que separa garagem de localidade própria: GYN, GJF,",
+      "GMA, GATS, GRAM, GCG e GRQ ficam intactos porque YN, JF, MA, ATS, RAM,",
+      "CG e RQ não existem no catálogo.",
+      "",
+      "Um código já cadastrado em 'zonas' acima nunca é reescrito.",
+      "",
+      "excecoes: garagens cujo nome não segue a regra. Confirmado pela",
+      "coordenação em 27/08/2026: a garagem do RIO é GCE.",
+      "",
+      "lido, a normalização de garagem fica desligada e o main.py avisa.",
+      "",
+      "catalogo_siglas aceita um caminho ou uma lista, tentada na ordem, relativa a",
+      "esta pasta. A primeira entrada é a pasta do extrator, que é a fonte de",
+      "verdade no PC. A segunda é a cópia config/siglas.json, que existe para o",
+      "deploy levar só este projeto. Se nenhuma for lida, a normalização de garagem",
+      "desliga e o main.py avisa."
+    ],
+    "ativa": true,
+    "prefixo": "G",
+    "catalogo_siglas": [
+      "../ControleRemoto SIGLA/siglas.json",
+      "siglas.json"
+    ],
+    "excecoes": {
+      "GCE": "RIO"
+    }
+  }
+}

@@ -1,0 +1,21 @@
+# Segredo. A URL do link compartilhado nunca entra no repositório.
+.streamlit/secrets.toml
+
+# Dados e saídas, refeitos a cada execução.
+execucao.XLS
+execucao.xls
+dados_trabalho/
+saida/
+
+# Parciais da escrita atômica, se alguma publicação falhar.
+*.part
+
+# Backups das edições e cache do Python.
+*.bak
+*.bak[0-9]
+__pycache__/
+*.pyc
+
+# Projetos vizinhos que não vão para o deploy desta página.
+BIFrotaManut - 2/
+ControleRemoto SIGLA/

@@ -1,0 +1,21 @@
+{
+  "_leia": [
+    "pasta_extracoes: onde o extrator do SIGLA deixa os arquivos brutos.",
+    "  Hoje: ControleRemoto SIGLA/saida, com uma subpasta por dia (DD-MM-AAAA)",
+    "  e uma subpasta de versao (v1, v2, ...) dentro dela. A busca inclui subpastas.",
+    "  Aceita ~ para a pasta do usuario.",
+    "prefixo_arquivo: filtra por inicio do nome. Deixe vazio para aceitar qualquer arquivo.",
+    "  ATENCAO: SIGLA_Relatorio tambem casa com o arquivo _descartados.csv, que o",
+    "  extrator grava depois dos demais. Ver nota no README.",
+    "abrir_ao_terminar: abre o HTML no navegador assim que o relatorio fica pronto."
+  ],
+  "pasta_extracoes": "C:\\Users\\daniel.reis\\OneDrive - Guanabara Diesel\\ControleRemotoSigla\\ProjetoIndisponiveis\\ControleRemoto SIGLA\\saida",
+  "prefixo_arquivo": "SIGLA_Relatorio",
+  "abrir_ao_terminar": true,
+  "fuso": "America/Sao_Paulo",
+  "_fuso": "Fuso da operação. A hora de corte e o 'gerado em' saem dele, não do relógio da máquina, que na nuvem é UTC. Precisa do pacote tzdata no Windows; sem ele o código cai no relógio local.",
+  "execucao_url": "https://bcoguan02-my.sharepoint.com/:x:/g/personal/daniel_reis_util_com_br/IQB2ID-vgj92TaoQ1E20QBUjAaJoQKbQKIfus0Rl-UdMo4A?e=n1L9ai",
+  "_execucao_url": "NÃO ponha o link aqui se este projeto for para um repositório público: a URL carrega o token de compartilhamento, e quem tem o link tem o arquivo. Use a variável de ambiente SIGLA_EXECUCAO_URL, ou os Secrets do Streamlit Cloud. Este campo existe só para uso local.",
+  "execucao_cache": "dados_trabalho/remoto/execucao.XLS",
+  "_execucao_cache": "Onde a cópia baixada do link é gravada. Relativo à raiz do projeto. Se um download falhar e existir cópia anterior, o main.py segue com ela e avisa que pode estar velha."
+}

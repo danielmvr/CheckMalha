@@ -1,0 +1,411 @@
+<title>Zonas de Localidade</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;500&display=swap">
+
+<style>
+:root{
+  --tinta:#16202B;
+  --tinta-fraca:#5C6C7D;
+  --papel:#E6EBF1;
+  --carta:#FFFFFF;
+  --regua:#CCD6E0;
+  --regua-fina:#E2E8EF;
+  --traco:#1D4E89;
+  --traco-fraco:#7B9BC4;
+  --traco-veu:#DDE7F3;
+  --novo:#0F6E4F;
+  --novo-veu:#DBF0E6;
+  --sombra:0 1px 2px rgba(22,32,43,.06), 0 6px 18px rgba(22,32,43,.05);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --tinta:#DCE5EE;
+    --tinta-fraca:#8FA1B4;
+    --papel:#0E151C;
+    --carta:#18222D;
+    --regua:#2C3A48;
+    --regua-fina:#232F3C;
+    --traco:#7FAEE0;
+    --traco-fraco:#4C6E96;
+    --traco-veu:#1B2E44;
+    --novo:#5FCBA0;
+    --novo-veu:#16332A;
+    --sombra:0 1px 2px rgba(0,0,0,.30), 0 6px 18px rgba(0,0,0,.24);
+  }
+}
+:root[data-theme="dark"]{
+  --tinta:#DCE5EE;
+  --tinta-fraca:#8FA1B4;
+  --papel:#0E151C;
+  --carta:#18222D;
+  --regua:#2C3A48;
+  --regua-fina:#232F3C;
+  --traco:#7FAEE0;
+  --traco-fraco:#4C6E96;
+  --traco-veu:#1B2E44;
+  --novo:#5FCBA0;
+  --novo-veu:#16332A;
+  --sombra:0 1px 2px rgba(0,0,0,.30), 0 6px 18px rgba(0,0,0,.24);
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:var(--papel);
+  color:var(--tinta);
+  font-family:"IBM Plex Sans",system-ui,-apple-system,Segoe UI,sans-serif;
+  font-size:15px;
+  line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+}
+.folha{max-width:1080px;margin:0 auto;padding:40px 24px 72px}
+
+/* ---- cabecalho ---- */
+.topo{
+  display:flex;flex-wrap:wrap;align-items:flex-end;gap:24px;
+  padding-bottom:20px;border-bottom:2px solid var(--tinta);
+}
+.topo h1{
+  font-family:Archivo,system-ui,sans-serif;
+  font-weight:700;font-size:clamp(28px,4.4vw,42px);
+  letter-spacing:-.02em;line-height:1.05;margin:0;
+  text-wrap:balance;flex:1 1 320px;
+}
+.contagem{display:flex;gap:28px;font-variant-numeric:tabular-nums}
+.contagem div{display:flex;flex-direction:column}
+.contagem b{
+  font-family:Archivo,sans-serif;font-weight:600;font-size:26px;line-height:1;
+}
+.contagem span{
+  font-size:11px;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--tinta-fraca);margin-top:5px;
+}
+.abertura{
+  margin:22px 0 0;max-width:62ch;color:var(--tinta-fraca);
+}
+.abertura strong{color:var(--tinta);font-weight:500}
+
+/* ---- busca ---- */
+.busca{
+  margin:28px 0 4px;display:flex;align-items:center;gap:12px;
+  background:var(--carta);border:1px solid var(--regua);border-radius:2px;
+  padding:0 14px;box-shadow:var(--sombra);
+}
+.busca svg{flex:none;color:var(--tinta-fraca)}
+.busca input{
+  flex:1;border:0;background:none;color:var(--tinta);
+  font-family:"IBM Plex Mono",ui-monospace,monospace;
+  font-size:15px;letter-spacing:.04em;padding:13px 0;text-transform:uppercase;
+}
+.busca input::placeholder{
+  font-family:"IBM Plex Sans",sans-serif;letter-spacing:0;text-transform:none;
+  color:var(--tinta-fraca);
+}
+.busca input:focus{outline:none}
+.busca:focus-within{border-color:var(--traco);box-shadow:0 0 0 3px var(--traco-veu)}
+.eco{
+  min-height:20px;margin:8px 2px 0;font-size:13px;color:var(--tinta-fraca);
+}
+.eco b{color:var(--traco);font-family:"IBM Plex Mono",monospace;font-weight:600}
+
+/* ---- grade de zonas ---- */
+.grade{
+  display:grid;gap:14px;margin-top:22px;
+  grid-template-columns:repeat(auto-fill,minmax(320px,1fr));
+}
+.zona{
+  background:var(--carta);border:1px solid var(--regua);border-radius:2px;
+  padding:16px 18px 18px;box-shadow:var(--sombra);
+  display:flex;flex-direction:column;gap:12px;
+  transition:opacity .16s ease, border-color .16s ease;
+}
+.zona.apagada{opacity:.26}
+.zona.alvo{border-color:var(--traco);box-shadow:0 0 0 2px var(--traco-veu),var(--sombra)}
+.zona header{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.zona h2{
+  font-family:Archivo,sans-serif;font-weight:600;font-size:19px;
+  letter-spacing:-.01em;margin:0;
+}
+.zona .qtd{
+  font-family:"IBM Plex Mono",monospace;font-size:11px;
+  color:var(--tinta-fraca);font-variant-numeric:tabular-nums;
+  letter-spacing:.06em;
+}
+.codigos{display:flex;flex-wrap:wrap;gap:6px}
+.cod{
+  display:inline-flex;align-items:baseline;gap:7px;
+  border:1px solid var(--regua);border-radius:2px;
+  padding:4px 8px;background:var(--papel);
+  transition:background .16s ease, border-color .16s ease;
+}
+.cod b{
+  font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:13px;
+  letter-spacing:.05em;
+}
+.cod i{
+  font-style:normal;font-size:11px;color:var(--tinta-fraca);
+  font-variant-numeric:tabular-nums;
+}
+.cod.principal{border-color:var(--traco-fraco);background:var(--traco-veu)}
+.cod.novo{border-color:var(--novo);background:var(--novo-veu)}
+.cod.novo i{color:var(--novo)}
+.cod.aceso{border-color:var(--traco);background:var(--traco);color:var(--carta)}
+.cod.aceso i{color:var(--carta);opacity:.75}
+.nota{
+  font-size:12.5px;color:var(--tinta-fraca);line-height:1.5;
+  border-top:1px solid var(--regua-fina);padding-top:10px;margin:0;
+}
+
+/* ---- blocos de texto ---- */
+.secao{margin-top:44px}
+.secao > h2{
+  font-family:Archivo,sans-serif;font-weight:600;font-size:13px;
+  letter-spacing:.11em;text-transform:uppercase;color:var(--tinta-fraca);
+  margin:0 0 14px;padding-bottom:8px;border-bottom:1px solid var(--regua);
+}
+.painel{
+  background:var(--carta);border:1px solid var(--regua);border-radius:2px;
+  padding:20px 22px;box-shadow:var(--sombra);
+}
+.painel p{margin:0 0 12px;max-width:66ch}
+.painel p:last-child{margin-bottom:0}
+.regra{
+  font-family:"IBM Plex Mono",monospace;font-size:13.5px;
+  background:var(--papel);border-left:3px solid var(--traco);
+  padding:11px 14px;margin:0 0 14px;overflow-x:auto;white-space:nowrap;
+}
+.duas{display:grid;gap:20px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));margin-top:4px}
+.duas h3{
+  font-family:Archivo,sans-serif;font-size:12px;font-weight:600;
+  letter-spacing:.09em;text-transform:uppercase;margin:0 0 9px;
+  color:var(--tinta-fraca);
+}
+.lista-cod{display:flex;flex-wrap:wrap;gap:5px}
+.lista-cod span{
+  font-family:"IBM Plex Mono",monospace;font-size:12.5px;font-weight:500;
+  border:1px solid var(--regua);border-radius:2px;padding:3px 7px;
+  background:var(--papel);letter-spacing:.04em;
+}
+.seta{color:var(--tinta-fraca);padding:0 2px}
+
+/* ---- mudancas ---- */
+.mudanca{
+  display:grid;grid-template-columns:auto 1fr;gap:10px 16px;align-items:baseline;
+  border-top:1px solid var(--regua-fina);padding:11px 0;
+}
+.mudanca:first-of-type{border-top:0;padding-top:0}
+.mudanca:last-of-type{padding-bottom:0}
+.mudanca code{
+  font-family:"IBM Plex Mono",monospace;font-size:13px;font-weight:600;
+  color:var(--novo);letter-spacing:.05em;
+}
+.mudanca span{color:var(--tinta-fraca);font-size:13.5px}
+.mudanca span b{color:var(--tinta);font-weight:500}
+
+.rodape{
+  margin-top:44px;padding-top:16px;border-top:1px solid var(--regua);
+  font-size:12.5px;color:var(--tinta-fraca);display:flex;flex-wrap:wrap;
+  gap:6px 18px;justify-content:space-between;
+}
+.rodape code{font-family:"IBM Plex Mono",monospace;font-size:12px}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="folha">
+
+  <header class="topo">
+    <h1>Zonas de Localidade</h1>
+    <div class="contagem">
+      <div><b>11</b><span>zonas</span></div>
+      <div><b>36</b><span>códigos</span></div>
+      <div><b>11</b><span>garagens</span></div>
+    </div>
+  </header>
+
+  <p class="abertura">
+    Duas localidades na mesma zona contam como o mesmo lugar quando o validador confere se
+    o trilho fecha. Chegar em <strong>QNT</strong> e sair de <strong>RIO</strong> não é quebra
+    de trilho. Nem todo código pertence a uma zona, e isso é esperado: o mapa cobre só as
+    regiões onde trocar de ponto dentro da mesma virada faz sentido.
+  </p>
+
+  <div class="busca">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
+      <circle cx="7" cy="7" r="4.6"/><path d="M10.4 10.4 14 14"/>
+    </svg>
+    <input id="q" type="text" placeholder="Buscar um código, por exemplo QNT ou GBSB" autocomplete="off" spellcheck="false" aria-label="Buscar código de localidade">
+  </div>
+  <p class="eco" id="eco" role="status" aria-live="polite"></p>
+
+  <div class="grade" id="grade"></div>
+
+  <section class="secao">
+    <h2>Garagens</h2>
+    <div class="painel">
+      <p class="regra">G + código &nbsp;→&nbsp; código, quando o código existe no catálogo oficial de siglas</p>
+      <p>
+        <b>GBSB</b> é a garagem de <b>BSB</b>, <b>GSSA</b> é a garagem de <b>SSA</b>. Para o
+        encadeamento do trilho os dois são o mesmo lugar, então chegar em BSB e sair de GBSB
+        fecha o trilho. Isso vale mesmo quando o código não pertence a nenhuma zona: chegar em
+        SSA e sair de GSSA fecha, porque é o mesmo lugar.
+      </p>
+      <p>
+        O filtro pelo catálogo é o que separa garagem de localidade própria. <b>GYN</b>,
+        <b>GJF</b> e <b>GATS</b> ficam intactos porque YN, JF e ATS não existem como código.
+        Um código já cadastrado numa zona acima nunca é reescrito.
+      </p>
+      <div class="duas">
+        <div>
+          <h3>Reconhecidas como garagem</h3>
+          <div class="lista-cod">
+            <span>GBHZ<i class="seta"> → </i>BHZ</span><span>GBRA<i class="seta"> → </i>BRA</span>
+            <span>GBSB<i class="seta"> → </i>BSB</span><span>GCPQ<i class="seta"> → </i>CPQ</span>
+            <span>GGYN<i class="seta"> → </i>GYN</span><span>GJDF<i class="seta"> → </i>JDF</span>
+            <span>GPSA<i class="seta"> → </i>PSA</span><span>GSAO<i class="seta"> → </i>SAO</span>
+            <span>GSEB<i class="seta"> → </i>SEB</span><span>GSSA<i class="seta"> → </i>SSA</span>
+            <span>GCE<i class="seta"> → </i>RIO</span>
+          </div>
+          <p class="nota" style="margin-top:10px">
+            <b>GCE</b> é a exceção: não segue o padrão, e é a garagem do RIO.
+          </p>
+        </div>
+        <div>
+          <h3>Localidade própria, não garagem</h3>
+          <div class="lista-cod">
+            <span>GATS</span><span>GCG</span><span>GEPC</span><span>GEPO</span><span>GIG</span>
+            <span>GJF</span><span>GJS</span><span>GLVE</span><span>GMA</span><span>GRAM</span>
+            <span>GRC</span><span>GRQ</span><span>GSBR</span><span>GTST</span><span>GYN</span>
+          </div>
+          <p class="nota" style="margin-top:10px">
+            <b>GCG</b> aparece pareado com RIO e pode ser garagem de Campo Grande. Confirmar
+            com a coordenação antes de mover.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="secao">
+    <h2>Atualização de 27 de agosto de 2026</h2>
+    <div class="painel">
+      <div class="mudanca">
+        <code>RPP</code>
+        <span>entrou na <b>Zona BSB</b>. Antes caía como local sem zona, 2 vezes no dia 27/08.</span>
+      </div>
+      <div class="mudanca">
+        <code>CSV</code>
+        <span>entrou na <b>Zona VLA</b>, junto de VLA e RDF.</span>
+      </div>
+      <div class="mudanca">
+        <code>VAS · MOZ</code>
+        <span><b>Zona VAS</b> criada com os dois. VAS aparecia 9 vezes como local sem zona.</span>
+      </div>
+      <p style="margin-top:16px;font-size:13.5px;color:var(--tinta-fraca)">
+        Efeito medido no dia 27/08/2026: locais sem zona caíram de 3 para 1 no relatório da malha.
+      </p>
+    </div>
+  </section>
+
+  <footer class="rodape">
+    <span>Fonte de verdade: <code>config/zonas.json</code> no validador da malha</span>
+    <span>Contagens de VAS, MOZ, CSV e RPP vêm do <code>execucao.xls</code>, 24/08 a 01/09</span>
+  </footer>
+</div>
+
+<script>
+const ZONAS = [
+  {nome:"Zona RIO", codigos:[["RIO",2691],["QNT",391],["GRC",100],["BBT",86],["GIG",84],["MDG",80],["GCE",10],["CNE",6]],
+   nota:"GCE tem 2211 usos como garagem contra 10 comerciais. RIO tem 19 de garagem."},
+  {nome:"Zona GYN", codigos:[["GYN",847],["APS",93]],
+   nota:"GYN tem 33 usos como garagem, APS tem 28."},
+  {nome:"Zona BSB", codigos:[["BSB",841],["TAG",87],["GMA",43],["RPP",11,"novo"]],
+   nota:"BSB tem 12 usos como garagem."},
+  {nome:"Zona JDF", codigos:[["JDF",684],["GJF",79],["JFA",11]],
+   nota:"JDF tem 192 usos como garagem."},
+  {nome:"Zona BHZ", codigos:[["BHZ",627],["TJK",163],["BTI",86]],
+   nota:"BHZ tem 40 usos como garagem. TJK pertence a BHZ e não é zona própria."},
+  {nome:"Zona VLA", codigos:[["VLA",583],["RDF",12],["CSV",2,"novo"]], nota:""},
+  {nome:"Zona SAO", codigos:[["SAO",352],["QCV",41]],
+   nota:"SAO tem 110 usos como garagem."},
+  {nome:"Zona BMA", codigos:[["BMA",332],["QVR",42],["QRZ",8]],
+   nota:"QVR tem 31 usos como garagem. BMA é zona separada de BHZ."},
+  {nome:"Zona SJK", codigos:[["SJK",231],["QMI",104],["JCE",5]], nota:""},
+  {nome:"Zona OPO", codigos:[["MRI",77],["OPO",76],["OBR",0]],
+   nota:"OBR está cadastrado na zona mas não teve uso comercial nem de garagem nesta malha."},
+  {nome:"Zona VAS", codigos:[["VAS",44,"novo"],["MOZ",3,"novo"]],
+   nota:"Zona criada em 27/08/2026 pela coordenação."}
+];
+
+const GARAGENS = {GBHZ:"BHZ",GBRA:"BRA",GBSB:"BSB",GCPQ:"CPQ",GGYN:"GYN",GJDF:"JDF",
+                  GPSA:"PSA",GSAO:"SAO",GSEB:"SEB",GSSA:"SSA",GCE:"RIO"};
+
+const esc = t => String(t).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+document.getElementById("grade").innerHTML = ZONAS.map((z,i) => {
+  const chips = z.codigos.map(([cod,uso,marca],j) => {
+    const classe = marca === "novo" ? "cod novo" : (j === 0 ? "cod principal" : "cod");
+    return `<span class="${classe}" data-cod="${cod}"><b>${esc(cod)}</b><i>${uso}</i></span>`;
+  }).join("");
+  return `<article class="zona" data-zona="${i}">
+    <header><h2>${esc(z.nome)}</h2><span class="qtd">${z.codigos.length} códigos</span></header>
+    <div class="codigos">${chips}</div>
+    ${z.nota ? `<p class="nota">${esc(z.nota)}</p>` : ""}
+  </article>`;
+}).join("");
+
+const campo = document.getElementById("q");
+const eco = document.getElementById("eco");
+const cartoes = [...document.querySelectorAll(".zona")];
+const chips = [...document.querySelectorAll(".cod")];
+
+function zonaDe(cod){
+  for (const z of ZONAS) if (z.codigos.some(c => c[0] === cod)) return z.nome;
+  return null;
+}
+
+function filtrar(){
+  const alvo = campo.value.trim().toUpperCase();
+  chips.forEach(c => c.classList.remove("aceso"));
+
+  if (!alvo){
+    cartoes.forEach(c => c.classList.remove("apagada","alvo"));
+    eco.textContent = "";
+    return;
+  }
+
+  const casam = chips.filter(c => c.dataset.cod.includes(alvo));
+  casam.forEach(c => c.classList.add("aceso"));
+  const zonasComCasa = new Set(casam.map(c => c.closest(".zona").dataset.zona));
+
+  cartoes.forEach(c => {
+    const tem = zonasComCasa.has(c.dataset.zona);
+    c.classList.toggle("apagada", !tem);
+    c.classList.toggle("alvo", tem);
+  });
+
+  if (casam.length){
+    const nomes = [...new Set(casam.map(c => zonaDe(c.dataset.cod)))];
+    eco.innerHTML = casam.length === 1
+      ? `<b>${esc(casam[0].dataset.cod)}</b> pertence à ${esc(nomes[0])}.`
+      : `${casam.length} códigos em ${nomes.length} zona(s): ${nomes.map(esc).join(", ")}.`;
+    return;
+  }
+
+  if (GARAGENS[alvo]){
+    const base = GARAGENS[alvo];
+    eco.innerHTML = `<b>${esc(alvo)}</b> é garagem e vale como <b>${esc(base)}</b>, na ${esc(zonaDe(base))}.`;
+    return;
+  }
+  if (alvo.length > 3 && alvo[0] === "G" && zonaDe(alvo.slice(1))){
+    const base = alvo.slice(1);
+    eco.innerHTML = `<b>${esc(alvo)}</b> resolve para <b>${esc(base)}</b>, na ${esc(zonaDe(base))}.`;
+    return;
+  }
+  eco.innerHTML = `<b>${esc(alvo)}</b> não está em nenhuma zona. O trilho que passa por ele não tem a continuidade conferida.`;
+}
+
+campo.addEventListener("input", filtrar);
+</script>

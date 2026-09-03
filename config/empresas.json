@@ -1,0 +1,44 @@
+{
+  "_leia": [
+    "Empresa de cada trilho, para o filtro do relatório.",
+    "",
+    "O trilho é o carro, e o carro pertence a uma empresa, então o sinal certo é",
+    "o sufixo do número do veículo: 13233.U é UTIL, 9605.R é REX.",
+    "",
+    "Medido no execucao.XLS de 03/09/2026, cruzando sufixo do veículo com o",
+    "prefixo do número do serviço:",
+    "  .U  2058 serviços com prefixo 15   -> UTIL",
+    "  .R  1822 serviços com prefixo 20   -> REX",
+    "  .F  1073 serviços com prefixo 25   -> RAF",
+    "  .S   350 serviços com prefixo 35   -> SAMP",
+    "  .GB    3 serviços, 20 e 25         -> GUANABARA",
+    "Existe cruzamento, carro de uma empresa rodando serviço de outra, mas é",
+    "minoria clara. Por isso o sufixo do veículo manda, e o prefixo do serviço",
+    "só entra quando o veículo não traz sufixo conhecido.",
+    "",
+    "'desconhecida' é o rótulo de quem não casa em nenhuma das duas listas."
+  ],
+  "por_sufixo_veiculo": {
+    "U": "UTIL",
+    "R": "REX",
+    "F": "RAF",
+    "S": "SAMP",
+    "GB": "GUANABARA"
+  },
+  "por_prefixo_servico": {
+    "15": "UTIL",
+    "20": "REX",
+    "25": "RAF",
+    "35": "SAMP"
+  },
+  "rotulos": {
+    "UTIL": "UTIL",
+    "REX": "REX",
+    "RAF": "RAF",
+    "SAMP": "Sampaio",
+    "GUANABARA": "Guanabara",
+    "OUTRAS": "Outras"
+  },
+  "ordem": ["UTIL", "REX", "RAF", "SAMP", "GUANABARA"],
+  "desconhecida": "OUTRAS"
+}

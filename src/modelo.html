@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Validação da malha</title>
+<style>
+:root{
+  --tinta:#16202B;
+  --tinta-fraca:#5C6C7D;
+  --papel:#E6EBF1;
+  --carta:#FFFFFF;
+  --regua:#CCD6E0;
+  --regua-fina:#E2E8EF;
+  --traco:#1D4E89;
+  --traco-fraco:#7B9BC4;
+  --interna:#8794A3;
+  --critica:#7A0C0C;
+  --alta:#C51F1F;
+  --media:#8F6100;
+  --baixa:#4A6076;
+  --ok:#137068;
+  --display:"Bahnschrift Condensed","Bahnschrift","Franklin Gothic Medium","Arial Narrow",sans-serif;
+  --corpo:"Segoe UI",system-ui,-apple-system,Roboto,sans-serif;
+  --dado:"Consolas","Cascadia Mono",ui-monospace,"SF Mono",monospace;
+}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;
+  background:var(--papel);
+  color:var(--tinta);
+  font-family:var(--corpo);
+  font-size:15px;
+  line-height:1.5;
+}
+
+.envelope{max-width:1520px;margin:0 auto;padding:0 24px 72px}
+
+/* ---------- cabeçalho ---------- */
+.capa{padding:36px 0 20px;border-bottom:2px solid var(--tinta)}
+.sobrenome{
+  font-family:var(--dado);
+  font-size:11px;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--tinta-fraca);margin-bottom:10px;
+}
+.capa h1{
+  font-family:var(--display);
+  font-size:clamp(38px,5.6vw,68px);
+  font-weight:600;letter-spacing:.01em;line-height:.95;
+  margin:0 0 14px;text-transform:uppercase;
+}
+.procedencia{
+  display:flex;flex-wrap:wrap;gap:6px 28px;
+  font-family:var(--dado);font-size:12px;color:var(--tinta-fraca);
+}
+.procedencia b{color:var(--tinta);font-weight:600}
+
+/* ---------- contadores ---------- */
+.placar{
+  display:grid;gap:1px;background:var(--regua);
+  grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+  border:1px solid var(--regua);margin:26px 0 0;
+}
+.marcador{
+  background:var(--carta);border:0;padding:16px 18px;text-align:left;
+  cursor:pointer;font-family:inherit;color:inherit;
+  border-top:3px solid transparent;transition:background .12s ease;
+}
+button.marcador:hover{background:#F5F8FB}
+.marcador[aria-pressed="true"]{background:#F0F4F9;border-top-color:currentColor}
+.marcador.estatico{cursor:default}
+.marcador .valor{
+  font-family:var(--display);font-size:40px;font-weight:600;line-height:1;
+  display:block;letter-spacing:.01em;
+}
+.marcador .rotulo{
+  font-family:var(--dado);font-size:10.5px;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--tinta-fraca);margin-top:7px;display:block;
+}
+.marcador[data-sev="CRITICA"]{color:var(--critica)}
+.marcador[data-sev="ALTA"]{color:var(--alta)}
+.marcador[data-sev="MEDIA"]{color:var(--media)}
+.marcador[data-sev="BAIXA"]{color:var(--baixa)}
+.marcador[data-sev="TOTAL"]{color:var(--tinta)}
+
+/* ---------- controles ---------- */
+.controles{
+  position:sticky;top:0;z-index:30;background:var(--papel);
+  padding:16px 0 14px;border-bottom:1px solid var(--regua);
+  display:flex;flex-wrap:wrap;gap:10px;align-items:center;
+}
+.busca{
+  flex:1 1 260px;min-width:220px;padding:9px 12px;
+  border:1px solid var(--regua);background:var(--carta);color:var(--tinta);
+  font-family:var(--dado);font-size:13px;
+}
+.busca:focus-visible{outline:2px solid var(--traco);outline-offset:-1px}
+.ficha{
+  border:1px solid var(--regua);background:var(--carta);color:var(--tinta-fraca);
+  font-family:var(--dado);font-size:11px;letter-spacing:.08em;text-transform:uppercase;
+  padding:8px 13px;cursor:pointer;transition:all .12s ease;
+}
+.ficha:hover{border-color:var(--traco-fraco)}
+.ficha[aria-pressed="true"]{background:var(--tinta);border-color:var(--tinta);color:#fff}
+.rotulo-grupo{
+  font-family:var(--dado);font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--tinta-fraca);align-self:center;padding-right:2px;
+}
+.ficha:focus-visible{outline:2px solid var(--traco);outline-offset:2px}
+.contagem-visivel{
+  margin-left:auto;font-family:var(--dado);font-size:11.5px;color:var(--tinta-fraca);
+}
+
+/* ---------- trilho ---------- */
+.trilho{
+  background:var(--carta);border:1px solid var(--regua);
+  border-left:4px solid var(--regua);margin-top:16px;
+}
+.trilho[data-sev="CRITICA"]{border-left-color:var(--critica)}
+.trilho[data-sev="ALTA"]{border-left-color:var(--alta)}
+.trilho[data-sev="MEDIA"]{border-left-color:var(--media)}
+.trilho[data-sev="BAIXA"]{border-left-color:var(--baixa)}
+.trilho[data-sev="OK"]{border-left-color:var(--ok)}
+
+.trilho-topo{
+  display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;
+  padding:14px 18px 12px;border-bottom:1px solid var(--regua-fina);
+}
+.trilho-nome{
+  font-family:var(--display);font-size:23px;font-weight:600;
+  text-transform:uppercase;letter-spacing:.02em;
+}
+.trilho-prefixo{font-family:var(--dado);font-size:12px;color:var(--tinta-fraca)}
+.selo{
+  margin-left:auto;font-family:var(--dado);font-size:10.5px;letter-spacing:.1em;
+  text-transform:uppercase;padding:4px 10px;border:1px solid currentColor;
+}
+.selo[data-sev="CRITICA"]{color:var(--critica)}
+.selo[data-sev="ALTA"]{color:var(--alta)}
+.selo[data-sev="MEDIA"]{color:var(--media)}
+.selo[data-sev="BAIXA"]{color:var(--baixa)}
+.selo[data-sev="OK"]{color:var(--ok)}
+
+/* ---------- faixa do trilho: o elemento central ---------- */
+.faixa{padding:18px 18px 8px;position:relative}
+.pista{
+  position:relative;height:34px;
+  background:repeating-linear-gradient(
+    to right,var(--regua-fina) 0 1px,transparent 1px var(--passo));
+  border-bottom:1px solid var(--regua);
+}
+.marca-interna{
+  font-size:.72rem;letter-spacing:.04em;text-transform:uppercase;
+  color:var(--interna);border:1px solid var(--interna);
+  border-radius:3px;padding:0 .3em;
+}
+.virada-dia{
+  position:absolute;top:0;bottom:0;width:1px;background:var(--tinta-fraca);
+  opacity:.45;z-index:1;
+}
+.perna{
+  position:absolute;top:9px;height:16px;
+  background:var(--traco);border:1px solid #143A66;
+  cursor:pointer;padding:0;
+}
+.perna[data-interna="1"]{
+  background:repeating-linear-gradient(45deg,var(--interna) 0 4px,#A6B1BE 4px 8px);
+  border-color:#73808E;
+}
+.perna[data-corta-inicio="1"]{border-left:2px dashed #A9C2DE}
+.perna[data-corta-fim="1"]{border-right:2px dashed #A9C2DE}
+.perna:hover,.perna.aceso{outline:2px solid var(--tinta);outline-offset:1px;z-index:4}
+.perna:focus-visible{outline:2px solid var(--traco);outline-offset:2px}
+
+.junta{
+  position:absolute;top:2px;height:30px;width:3px;margin-left:-1px;
+  background:var(--regua);border:0;padding:0;cursor:pointer;z-index:5;
+}
+.junta[data-sev="CRITICA"]{background:var(--critica);width:5px;height:34px;top:0}
+.junta[data-sev="ALTA"]{background:var(--alta);width:5px;height:34px;top:0}
+.junta[data-sev="MEDIA"]{background:var(--media);width:4px}
+.junta[data-sev="BAIXA"]{background:var(--baixa)}
+.junta[data-sev="CRITICA"]::after,
+.junta[data-sev="ALTA"]::after{
+  content:"";position:absolute;left:50%;top:-6px;width:7px;height:7px;
+  margin-left:-3.5px;background:inherit;transform:rotate(45deg);
+}
+.junta:focus-visible{outline:2px solid var(--tinta);outline-offset:3px}
+
+.convencao{
+  font-family:var(--dado);font-size:11px;line-height:1.45;
+  color:var(--tinta-fraca);margin:0 0 16px;max-width:96ch;
+}
+.regua-tempo{
+  position:relative;height:20px;margin-top:2px;
+  font-family:var(--dado);font-size:10px;color:var(--tinta-fraca);
+}
+.regua-tempo span{position:absolute;top:2px;transform:translateX(-50%);white-space:nowrap}
+.regua-tempo span[data-borda="inicio"]{transform:none}
+.regua-tempo span[data-borda="fim"]{transform:translateX(-100%)}
+
+/* ---------- anomalias ---------- */
+.ocorrencias{border-top:1px solid var(--regua-fina)}
+.ocorrencia{
+  display:grid;grid-template-columns:104px 1fr;gap:0 16px;
+  padding:13px 18px;border-bottom:1px solid var(--regua-fina);
+  cursor:pointer;transition:background .12s ease;
+}
+.ocorrencia:last-child{border-bottom:0}
+.ocorrencia:hover,.ocorrencia.aceso{background:#F4F7FA}
+.ocorrencia:focus-visible{outline:2px solid var(--traco);outline-offset:-2px}
+.faixa-sev{
+  font-family:var(--dado);font-size:10px;letter-spacing:.1em;text-transform:uppercase;
+  padding-top:3px;font-weight:700;
+}
+.faixa-sev[data-sev="CRITICA"]{color:var(--critica)}
+.faixa-sev[data-sev="ALTA"]{color:var(--alta)}
+.faixa-sev[data-sev="MEDIA"]{color:var(--media)}
+.faixa-sev[data-sev="BAIXA"]{color:var(--baixa)}
+.ocorrencia h3{
+  margin:0 0 3px;font-family:var(--display);font-size:18px;font-weight:600;
+  text-transform:uppercase;letter-spacing:.02em;
+}
+.ocorrencia p{margin:0 0 8px;font-size:13.5px;color:#33404E}
+.trecho{
+  font-family:var(--dado);font-size:12px;color:var(--tinta-fraca);
+  display:flex;flex-wrap:wrap;gap:4px 18px;
+}
+.trecho b{color:var(--tinta);font-weight:600}
+.seta{color:var(--traco);font-weight:700}
+.tempo{padding:0 .35em;border-radius:3px}
+.tempo[data-grau]{font-weight:700}
+.tempo[data-grau="1"]{background:#FDF0C4}
+.tempo[data-grau="2"]{background:#FAD97A}
+.tempo[data-grau="3"]{background:#F0A63C}
+.tempo[data-grau="4"]{background:#D4441E;color:#FFFFFF}
+.tempo[data-grau="5"]{background:#8A0F0F;color:#FFFFFF}
+.escala{
+  display:inline-flex;gap:4px;align-items:center;vertical-align:-2px;margin-left:2px;
+}
+.escala b{font-size:10px;font-weight:600;color:var(--tinta)}
+.escala b[data-grau="4"],.escala b[data-grau="5"]{color:#FFFFFF}
+.nota-regra{
+  margin-top:7px;font-family:var(--dado);font-size:11px;color:var(--tinta-fraca);
+  border-left:2px solid var(--regua);padding-left:9px;
+}
+
+/* ---------- apêndices ---------- */
+.apendice{margin-top:44px;border-top:2px solid var(--tinta);padding-top:22px}
+.apendice h2{
+  font-family:var(--display);font-size:26px;font-weight:600;margin:0 0 6px;
+  text-transform:uppercase;letter-spacing:.02em;
+}
+.apendice p{margin:0 0 14px;font-size:13.5px;color:var(--tinta-fraca);max-width:70ch}
+.tabela{width:100%;border-collapse:collapse;background:var(--carta);font-size:13px}
+.tabela th,.tabela td{
+  text-align:left;padding:8px 12px;border:1px solid var(--regua-fina);
+  font-family:var(--dado);font-size:12px;
+}
+.tabela th{
+  background:#F1F5F9;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--tinta-fraca);
+}
+.nuvem{display:flex;flex-wrap:wrap;gap:8px}
+.pedaco{
+  font-family:var(--dado);font-size:12px;background:var(--carta);
+  border:1px solid var(--regua);padding:6px 11px;
+}
+.pedaco b{color:var(--alta)}
+
+.vazio{
+  background:var(--carta);border:1px solid var(--regua);padding:44px 24px;
+  text-align:center;margin-top:16px;
+}
+.vazio strong{
+  display:block;font-family:var(--display);font-size:24px;font-weight:600;
+  text-transform:uppercase;margin-bottom:6px;
+}
+.vazio span{color:var(--tinta-fraca);font-size:14px}
+
+.dica{
+  position:fixed;z-index:80;pointer-events:none;background:var(--tinta);color:#fff;
+  font-family:var(--dado);font-size:11.5px;line-height:1.55;padding:9px 12px;
+  max-width:280px;opacity:0;transition:opacity .1s ease;
+}
+.dica.aberta{opacity:1}
+.dica b{color:#9FC2EA}
+
+@media (max-width:760px){
+  .envelope{padding:0 14px 56px}
+  .ocorrencia{grid-template-columns:1fr;gap:6px}
+  .contagem-visivel{margin-left:0;width:100%}
+}
+@media (prefers-reduced-motion:reduce){
+  *{transition:none!important;animation:none!important}
+  html{scroll-behavior:auto}
+}
+@media print{
+  .controles,.placar{display:none}
+  .trilho{break-inside:avoid;border-left-width:6px}
+  body{background:#fff}
+}
+</style>
+</head>
+<body>
+<div class="envelope">
+
+  <header class="capa">
+    <div class="sobrenome" id="sobrenome"></div>
+    <h1>Validação da malha</h1>
+    <div class="procedencia" id="procedencia"></div>
+  </header>
+
+  <div class="placar" id="placar"></div>
+
+  <div class="controles">
+    <input class="busca" id="busca" type="search" placeholder="Buscar trilho, serviço ou local">
+    <button class="ficha" data-tipo="SEQUENCIA" aria-pressed="false">Trilho quebrado</button>
+    <button class="ficha" data-tipo="VIRADA_CURTA" aria-pressed="false">Virada curta</button>
+    <button class="ficha" data-tipo="VIRADA_LINHA_CURTA" aria-pressed="false">Virada linha curta</button>
+    <button class="ficha" data-tipo="SOBREPOSICAO" aria-pressed="false">Sobreposição</button>
+    <button class="ficha" data-tipo="LOCAL_FORA_DO_MAPA" aria-pressed="false">Local sem zona</button>
+    <button class="ficha" id="mostrarTodos" aria-pressed="false">Mostrar trilhos sem anomalia</button>
+    <button class="ficha" id="limpar">Limpar filtros</button>
+    <button class="ficha" id="exportar">Baixar CSV</button>
+    <span class="contagem-visivel" id="contagemVisivel"></span>
+  </div>
+
+  <div class="controles" id="controlesEmpresa"></div>
+
+  <p class="convencao">No desenho, cada serviço aparece só na vizinhança da virada:
+     a última hora de quem chega e a primeira hora de quem parte. A borda tracejada
+     marca onde a barra foi cortada, e o bloco sem virada de nenhum lado aparece
+     recortado no dia. Os horários do texto, da dica e do CSV são os cheios.
+     <br>O fundo do tempo de virada diz quanto do mínimo ainda sobrou, do mais claro
+     para o mais forte:
+     <span class="escala"><b class="tempo" data-grau="1">3/4</b>
+     <b class="tempo" data-grau="2">1/2</b>
+     <b class="tempo" data-grau="3">1/4</b>
+     <b class="tempo" data-grau="4">menos</b>
+     <b class="tempo" data-grau="5">sobreposto</b></span></p>
+
+  <main id="lista"></main>
+
+  <section class="apendice" id="secaoLocais" hidden>
+    <h2>Locais fora do mapa</h2>
+    <p>Estes códigos apareceram na extração mas não estão em <code>config/zonas.json</code>.
+       Enquanto não forem cadastrados, a continuidade dos trilhos que passam por eles não é validada.</p>
+    <div class="nuvem" id="locais"></div>
+  </section>
+
+  <section class="apendice" id="secaoDescartes" hidden>
+    <h2>Linhas não validadas</h2>
+    <p>Registros da extração sem os campos necessários para montar o encadeamento.</p>
+    <table class="tabela">
+      <thead><tr><th>Linha</th><th>Trilho</th><th>Serviço</th><th>Falta</th></tr></thead>
+      <tbody id="descartes"></tbody>
+    </table>
+  </section>
+
+</div>
+<div class="dica" id="dica"></div>
+
+<script>
+const DADOS = /*__DADOS__*/;
+
+const NOME_TIPO = {
+  SEQUENCIA:"Trilho quebrado",
+  VIRADA_CURTA:"Virada curta",
+  VIRADA_LINHA_CURTA:"Virada linha curta",
+  SOBREPOSICAO:"Sobreposição",
+  LOCAL_FORA_DO_MAPA:"Local sem zona"
+};
+const INTERNAS = ["MANUTENCAO","RESERVA","TRANSFERENCIA","ABASTECIMENTO"];
+
+const estado = {texto:"", tipos:new Set(), empresas:new Set(),
+                severidade:null, mostrarTodos:false};
+
+const $ = s => document.querySelector(s);
+const esc = t => String(t ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+/* cabeçalho */
+(function capa(){
+  const m = DADOS.meta, r = DADOS.resumo;
+  $("#sobrenome").textContent = "Malha de " + m.dia_operacao + " · gerado em " + m.gerado_em;
+  $("#procedencia").innerHTML = [
+    ["Extração", m.arquivo_origem],
+    ["Cópia de trabalho", m.arquivo_trabalho],
+    ["Janela", DADOS.eixo.inicio + " a " + DADOS.eixo.fim],
+    ["Corte", m.corte || "sem corte"],
+    ["Serviços", r.servicos + " em " + r.trilhos + " trilhos"],
+    ["Viradas conferidas", String(r.elos)]
+  ].map(([k,v]) => "<span>" + esc(k) + " <b>" + esc(v) + "</b></span>").join("");
+})();
+
+/* placar */
+(function placar(){
+  const s = DADOS.resumo.severidade;
+  const total = s.CRITICA + s.ALTA + s.MEDIA + s.BAIXA;
+  const leitura = [
+    ["TOTAL", total, "anomalias"],
+    ["TRILHOS", DADOS.resumo.trilhos_com_anomalia, "trilhos afetados"]
+  ];
+  const filtros = [
+    ["CRITICA", s.CRITICA, "críticas"],
+    ["ALTA", s.ALTA, "altas"],
+    ["MEDIA", s.MEDIA, "médias"],
+    ["BAIXA", s.BAIXA, "baixas"]
+  ];
+
+  $("#placar").innerHTML =
+    leitura.map(([sev,valor,rotulo]) =>
+      '<div class="marcador estatico" data-sev="' + sev + '">' +
+      '<span class="valor">' + valor + '</span>' +
+      '<span class="rotulo">' + rotulo + '</span></div>').join("") +
+    filtros.map(([sev,valor,rotulo]) =>
+      '<button class="marcador" data-sev="' + sev + '" aria-pressed="false"' +
+      ' title="Filtrar só as ' + rotulo + '">' +
+      '<span class="valor">' + valor + '</span>' +
+      '<span class="rotulo">' + rotulo + '</span></button>').join("");
+
+  $("#placar").addEventListener("click", ev => {
+    const alvo = ev.target.closest("button.marcador");
+    if(!alvo) return;
+    const sev = alvo.dataset.sev;
+    estado.severidade = estado.severidade === sev ? null : sev;
+    document.querySelectorAll("button.marcador").forEach(b =>
+      b.setAttribute("aria-pressed", String(b.dataset.sev === estado.severidade)));
+    desenhar();
+  });
+})();
+
+/* filtro por empresa. Os botões saem do dado, então só aparece o que existe no
+   dia, e a barra inteira desaparece quando há uma empresa só. */
+(function empresas(){
+  const caixa = $("#controlesEmpresa");
+  if(!caixa) return;
+
+  const contagem = new Map();
+  DADOS.trilhos.forEach(t => {
+    const nome = t.empresa || "OUTRAS";
+    if(!contagem.has(nome)) contagem.set(nome, {total:0, comAnomalia:0});
+    const c = contagem.get(nome);
+    c.total++;
+    if(t.total) c.comAnomalia++;
+  });
+
+  const rotulos = DADOS.resumo.empresas_rotulos || {};
+  const ordem = (DADOS.resumo.empresas_ordem || []).filter(e => contagem.has(e));
+  [...contagem.keys()].sort().forEach(e => { if(!ordem.includes(e)) ordem.push(e); });
+
+  if(ordem.length < 2){ caixa.remove(); return; }
+
+  caixa.innerHTML = '<span class="rotulo-grupo">Empresa</span>' +
+    ordem.map(nome => {
+      const c = contagem.get(nome);
+      return '<button class="ficha" data-empresa="' + esc(nome) + '"' +
+        ' aria-pressed="false" title="' + c.comAnomalia +
+        " trilho(s) com anomalia, de " + c.total + ' na malha">' +
+        esc(rotulos[nome] || nome) + " " + c.comAnomalia + "</button>";
+    }).join("");
+
+  caixa.addEventListener("click", ev => {
+    const botao = ev.target.closest(".ficha[data-empresa]");
+    if(!botao) return;
+    const nome = botao.dataset.empresa;
+    estado.empresas.has(nome) ? estado.empresas.delete(nome)
+                              : estado.empresas.add(nome);
+    botao.setAttribute("aria-pressed", String(estado.empresas.has(nome)));
+    desenhar();
+  });
+})();
+
+/* dados derivados */
+const passoMarcas = DADOS.eixo.marcas.length > 1
+  ? DADOS.eixo.marcas[1].pos - DADOS.eixo.marcas[0].pos : 100;
+
+function problemasDoTrilho(t){
+  return t.elos.flatMap(e => e.problemas.map(p => ({elo:e, problema:p})));
+}
+
+function passaFiltro(t){
+  // Uma busca digitada é um pedido explícito, então ela alcança trilhos limpos também.
+  if(!estado.mostrarTodos && !estado.texto && t.total === 0) return false;
+  if(estado.empresas.size && !estado.empresas.has(t.empresa || "OUTRAS")) return false;
+  const casos = problemasDoTrilho(t);
+  if(estado.tipos.size && !casos.some(c => estado.tipos.has(c.problema.tipo))) return false;
+  if(estado.severidade && !casos.some(c => c.problema.severidade === estado.severidade)) return false;
+  if(estado.texto){
+    const alvo = [t.nome, t.prefixo,
+      ...t.servicos.map(s => s.servico + " " + s.origem + " " + s.destino + " " + s.tipo)
+    ].join(" ").toLowerCase();
+    if(!alvo.includes(estado.texto)) return false;
+  }
+  return true;
+}
+
+function casoVisivel(c){
+  if(estado.tipos.size && !estado.tipos.has(c.problema.tipo)) return false;
+  if(estado.severidade && c.problema.severidade !== estado.severidade) return false;
+  return true;
+}
+
+/* faixa */
+function faixaHTML(t){
+  const pernas = t.servicos.flatMap((s,i) => {
+    const interna = (s.e_servico === false || INTERNAS.includes(s.tipo)) ? 1 : 0;
+    const rotulo = esc(s.servico + " de " + s.origem + " para " + s.destino);
+    const pecas = s.pecas && s.pecas.length
+      ? s.pecas : [{pos:s.pos, larg:s.larg, corta_inicio:false, corta_fim:false}];
+    return pecas.map((p,j) =>
+      '<button class="perna" data-trilho="' + esc(t.nome) + '" data-servico="' + i + '"' +
+      ' data-peca="' + j + '" data-interna="' + interna + '"' +
+      (p.corta_inicio ? ' data-corta-inicio="1"' : "") +
+      (p.corta_fim ? ' data-corta-fim="1"' : "") +
+      ' style="left:' + p.pos + '%;width:' + p.larg + '%"' +
+      ' aria-label="' + rotulo + '"></button>');
+  }).join("");
+
+  const juntas = t.elos.map(e =>
+    '<button class="junta" data-sev="' + e.severidade + '" data-elo="' + e.id + '"' +
+    ' style="left:' + e.pos + '%"' +
+    ' aria-label="' + esc("Virada " + e.de + " para " + e.para + ", " + e.intervalo) + '"></button>'
+  ).join("");
+
+  let diaAnterior = null;
+  const regua = DADOS.eixo.marcas.map(m => {
+    const trocou = m.dia !== diaAnterior;
+    diaAnterior = m.dia;
+    const texto = trocou ? m.dia + " " + m.rotulo : m.rotulo;
+    const borda = m.pos <= 0.5 ? ' data-borda="inicio"'
+                : (m.pos >= 99.5 ? ' data-borda="fim"' : "");
+    return '<span' + borda + ' style="left:' + m.pos + '%">' + esc(texto) + "</span>";
+  }).join("");
+
+  const viradas = DADOS.eixo.marcas
+    .filter((m,i) => i > 0 && m.dia !== DADOS.eixo.marcas[i-1].dia)
+    .map(m => '<div class="virada-dia" style="left:' + m.pos + '%"></div>').join("");
+
+  return '<div class="faixa">' +
+    '<div class="pista" style="--passo:' + passoMarcas + '%">' +
+      viradas + pernas + juntas + '</div>' +
+    '<div class="regua-tempo">' + regua + '</div></div>';
+}
+
+/* Grau de criticidade do tempo de virada, 1 pálido a 5 forte. É a fração do
+   mínimo que ainda sobrou, então a escala acompanha a regra que vale naquele
+   elo, e não o relógio cru: 25 min onde o mínimo caiu para 1 min não é crítico. */
+function grauTempo(e){
+  if(e.intervalo_min < 0) return 5;
+  if(e.cobra_virada === false) return 0;
+  if(!(e.minimo_min > 0)) return 0;
+  const razao = e.intervalo_min / e.minimo_min;
+  if(razao >= 1) return 0;
+  if(razao < 0.25) return 4;
+  if(razao < 0.50) return 3;
+  if(razao < 0.75) return 2;
+  return 1;
+}
+
+function ocorrenciaHTML(t, caso){
+  const e = caso.elo, p = caso.problema;
+  const grau = grauTempo(e);
+  const tempo = '<b class="tempo"' + (grau ? ' data-grau="' + grau + '"' : "") +
+                ">" + esc(e.intervalo) + "</b>";
+  const linhas = [
+    "<span><b>" + esc(e.servico_de) + "</b> chega " + esc(e.chega) + " em <b>" + esc(e.de) + "</b></span>",
+    '<span class="seta">&rarr;</span>',
+    "<span><b>" + esc(e.servico_para) + "</b> parte " + esc(e.parte) + " de <b>" + esc(e.para) + "</b></span>",
+    e.cobra_virada === false
+      ? "<span>intervalo " + tempo + " · virada não cobrada</span>"
+      : "<span>virada " + tempo + " · mínimo " + esc(e.minimo) + "</span>"
+  ].join("");
+
+  let nota = e.regra
+    ? '<div class="nota-regra">Mínimo ajustado pela exceção ' + esc(e.regra_id) + ": " + esc(e.regra) + "</div>"
+    : "";
+  if(e.cobra_virada === false){
+    nota += '<div class="nota-regra">Um dos lados é bloco interno, manutenção, revisão ou ' +
+            'linha sem número legível. Virada só é cobrada entre dois serviços comerciais.</div>';
+  }
+
+  return '<div class="ocorrencia" tabindex="0" data-trilho="' + esc(t.nome) + '"' +
+    ' data-a="' + e.idx_anterior + '" data-b="' + e.idx_proximo + '" data-elo="' + e.id + '">' +
+    '<div class="faixa-sev" data-sev="' + p.severidade + '">' + p.severidade + "</div>" +
+    "<div><h3>" + esc(p.titulo) + "</h3><p>" + esc(p.detalhe) + "</p>" +
+    '<div class="trecho">' + linhas + "</div>" + nota + "</div></div>";
+}
+
+function trilhoHTML(t){
+  const casos = problemasDoTrilho(t).filter(casoVisivel);
+  const selo = t.total ? t.total + (t.total > 1 ? " anomalias" : " anomalia") : "sem anomalia";
+  return '<article class="trilho" data-sev="' + t.severidade + '" data-nome="' + esc(t.nome) + '">' +
+    '<div class="trilho-topo">' +
+      '<span class="trilho-nome">' + esc(t.nome) + "</span>" +
+      (t.prefixo ? '<span class="trilho-prefixo">' + esc(t.prefixo) + "</span>" : "") +
+      (t.empresa ? '<span class="trilho-prefixo">' +
+        esc((DADOS.resumo.empresas_rotulos || {})[t.empresa] || t.empresa) +
+        "</span>" : "") +
+      '<span class="selo" data-sev="' + t.severidade + '">' + selo + "</span>" +
+    "</div>" +
+    faixaHTML(t) +
+    (casos.length ? '<div class="ocorrencias">' + casos.map(c => ocorrenciaHTML(t,c)).join("") + "</div>" : "") +
+  "</article>";
+}
+
+function desenhar(){
+  const visiveis = DADOS.trilhos.filter(passaFiltro);
+  const lista = $("#lista");
+
+  if(!visiveis.length){
+    const semAnomalia = DADOS.resumo.severidade.CRITICA + DADOS.resumo.severidade.ALTA +
+                        DADOS.resumo.severidade.MEDIA + DADOS.resumo.severidade.BAIXA === 0;
+    lista.innerHTML = '<div class="vazio"><strong>' +
+      (semAnomalia ? "Malha fechada" : "Nada com esses filtros") + "</strong><span>" +
+      (semAnomalia
+        ? "Os " + DADOS.resumo.trilhos + " trilhos de " + esc(DADOS.meta.dia_operacao) +
+          " fecham destino com origem e respeitam a virada mínima."
+        : "Ajuste a busca ou use Limpar filtros para ver a malha inteira.") +
+      "</span></div>";
+  } else {
+    lista.innerHTML = visiveis.map(trilhoHTML).join("");
+  }
+
+  $("#contagemVisivel").textContent =
+    visiveis.length + " de " + DADOS.trilhos.length + " trilhos na tela";
+}
+
+/* interação */
+$("#busca").addEventListener("input", ev => {
+  estado.texto = ev.target.value.trim().toLowerCase();
+  desenhar();
+});
+
+document.querySelectorAll(".ficha[data-tipo]").forEach(botao => {
+  botao.addEventListener("click", () => {
+    const tipo = botao.dataset.tipo;
+    estado.tipos.has(tipo) ? estado.tipos.delete(tipo) : estado.tipos.add(tipo);
+    botao.setAttribute("aria-pressed", String(estado.tipos.has(tipo)));
+    desenhar();
+  });
+});
+
+$("#mostrarTodos").addEventListener("click", () => {
+  estado.mostrarTodos = !estado.mostrarTodos;
+  $("#mostrarTodos").setAttribute("aria-pressed", String(estado.mostrarTodos));
+  desenhar();
+});
+
+$("#limpar").addEventListener("click", () => {
+  estado.texto = ""; estado.tipos.clear(); estado.empresas.clear();
+  estado.severidade = null; estado.mostrarTodos = false;
+  $("#busca").value = "";
+  document.querySelectorAll('.ficha[aria-pressed]').forEach(b => b.setAttribute("aria-pressed","false"));
+  document.querySelectorAll("button.marcador").forEach(b => b.setAttribute("aria-pressed","false"));
+  desenhar();
+});
+
+function acender(nome, elo){
+  document.querySelectorAll(".aceso").forEach(n => n.classList.remove("aceso"));
+  const artigo = document.querySelector('.trilho[data-nome="' + CSS.escape(nome) + '"]');
+  if(!artigo) return;
+  const ocorrencia = artigo.querySelector('.ocorrencia[data-elo="' + elo + '"]');
+  if(ocorrencia){
+    ocorrencia.classList.add("aceso");
+    ["a","b"].forEach(k => {
+      artigo.querySelectorAll('.perna[data-servico="' + ocorrencia.dataset[k] + '"]')
+        .forEach(perna => perna.classList.add("aceso"));
+    });
+    ocorrencia.scrollIntoView({block:"center"});
+  }
+}
+
+$("#lista").addEventListener("click", ev => {
+  const junta = ev.target.closest(".junta");
+  if(junta){ acender(junta.closest(".trilho").dataset.nome, junta.dataset.elo); return; }
+  const ocorrencia = ev.target.closest(".ocorrencia");
+  if(ocorrencia){ acender(ocorrencia.dataset.trilho, ocorrencia.dataset.elo); }
+});
+
+$("#lista").addEventListener("keydown", ev => {
+  if(ev.key !== "Enter" && ev.key !== " ") return;
+  const ocorrencia = ev.target.closest(".ocorrencia");
+  if(ocorrencia){ ev.preventDefault(); acender(ocorrencia.dataset.trilho, ocorrencia.dataset.elo); }
+});
+
+/* dica flutuante */
+const dica = $("#dica");
+$("#lista").addEventListener("mouseover", ev => {
+  const perna = ev.target.closest(".perna");
+  if(!perna) return;
+  const t = DADOS.trilhos.find(x => x.nome === perna.dataset.trilho);
+  const s = t && t.servicos[+perna.dataset.servico];
+  if(!s) return;
+  const marca = s.e_servico === false ? ' <span class="marca-interna">bloco interno</span>' : "";
+  dica.innerHTML = "<b>" + esc(s.servico) + "</b> · " + esc(s.tipo) + marca + "<br>" +
+    esc(s.origem) + " &rarr; " + esc(s.destino) + "<br>" +
+    esc(s.inicio) + " a " + esc(s.fim) + " · " + esc(s.duracao) + "<br>linha " + s.linha;
+  dica.classList.add("aberta");
+});
+$("#lista").addEventListener("mousemove", ev => {
+  if(!dica.classList.contains("aberta")) return;
+  const x = Math.min(ev.clientX + 16, window.innerWidth - 300);
+  dica.style.left = x + "px";
+  dica.style.top = (ev.clientY + 18) + "px";
+});
+$("#lista").addEventListener("mouseout", ev => {
+  if(ev.target.closest(".perna")) dica.classList.remove("aberta");
+});
+
+/* exportação */
+$("#exportar").addEventListener("click", () => {
+  const cabecalho = ["Trilho","Prefixo","Empresa","Severidade","Tipo","Ocorrência","Detalhe",
+    "Serviço anterior","Chega em","Chegada","Serviço seguinte","Parte de","Partida",
+    "Virada","Mínimo","Exceção aplicada"];
+  const linhas = [cabecalho];
+  DADOS.trilhos.filter(passaFiltro).forEach(t => {
+    problemasDoTrilho(t).filter(casoVisivel).forEach(({elo:e, problema:p}) => {
+      linhas.push([t.nome,t.prefixo,t.empresa||"",p.severidade,
+        NOME_TIPO[p.tipo]||p.tipo,p.titulo,p.detalhe,
+        e.servico_de,e.de,e.chega,e.servico_para,e.para,e.parte,e.intervalo,e.minimo,e.regra_id]);
+    });
+  });
+  const csv = "\uFEFF" + linhas.map(l =>
+    l.map(c => '"' + String(c ?? "").replace(/"/g,'""') + '"').join(";")).join("\r\n");
+  const url = URL.createObjectURL(new Blob([csv], {type:"text/csv;charset=utf-8"}));
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "anomalias_malha_" + DADOS.meta.dia_operacao.replace(/\//g,"-") + ".csv";
+  link.click();
+  URL.revokeObjectURL(url);
+});
+
+/* apêndices */
+(function apendices(){
+  const locais = Object.entries(DADOS.locais_fora_do_mapa || {});
+  if(locais.length){
+    $("#secaoLocais").hidden = false;
+    $("#locais").innerHTML = locais.map(([codigo,vezes]) =>
+      '<span class="pedaco">' + esc(codigo) + " <b>" + vezes + "&times;</b></span>").join("");
+  }
+  if((DADOS.descartados || []).length){
+    $("#secaoDescartes").hidden = false;
+    $("#descartes").innerHTML = DADOS.descartados.map(d =>
+      "<tr><td>" + d.linha + "</td><td>" + esc(d.trilho) + "</td><td>" +
+      esc(d.servico) + "</td><td>" + esc(d.motivo) + "</td></tr>").join("");
+  }
+})();
+
+desenhar();
+</script>
+</body>
+</html>

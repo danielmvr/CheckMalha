@@ -1,0 +1,320 @@
+{
+  "_leia": [
+    "Tempo de virada é o intervalo entre o fim de um serviço e o início do próximo no mesmo trilho.",
+    "O padrão é 240 minutos (4 horas). Cada exceção abaixa esse mínimo quando as condições batem.",
+    "Se mais de uma exceção se aplica, vale a de menor mínimo, e o relatório mostra qual regra pegou.",
+    "Para ligar ou desligar uma exceção, mude o campo 'ativa'.",
+    "",
+    "Condições disponíveis dentro de 'quando':",
+    "  zona_virada              lista de zonas do local de chegada",
+    "  tipo_anterior            lista de tipos do serviço que chega",
+    "  tipo_proximo             lista de tipos do serviço que parte",
+    "  trilho                   lista de nomes de trilho",
+    "  par_local                lista de pares [destino_anterior, origem_proxima]",
+    "  par_rota                 lista de pares [rota_anterior, rota_proxima],",
+    "                           cada rota escrita ORIGEM>DESTINO",
+    "  par_servico              lista de pares [numero_anterior, numero_proximo]",
+    "  mesmo_servico            true quando o número do serviço é o mesmo dos dois lados",
+    "  local_encaixa            true quando o destino que chega é igual à origem que parte",
+    "  duracao_anterior_max_min duração do serviço que chega, em minutos, exclusivo",
+    "  duracao_proxima_max_min  duração do serviço que parte, em minutos, exclusivo",
+    "",
+    "Todas as condições de uma exceção precisam bater ao mesmo tempo.",
+    "Duração desconhecida nunca satisfaz as condições de duração, por segurança."
+  ],
+  "classificacao_servico": {
+    "_leia": [
+      "Define o que é serviço comercial. Só entre dois serviços a virada é",
+      "cobrada, e só serviço entra no encadeamento do trilho. O resto continua",
+      "desenhado na linha do tempo, mas não gera anomalia nenhuma.",
+      "",
+      "Duas formas de decidir, nesta ordem:",
+      "",
+      "1. por_tipo, quando a fonte traz o tipo estruturado. É o caso do relatório",
+      "   execucao.xls, cuja coluna 'Tipo Serviço' é confiável.",
+      "",
+      "2. cenarios, pelo padrão do número. Reserva para a extração por OCR da",
+      "   malha, onde o tipo lido da tela não é confiável.",
+      "   estrito = só número limpo de 8 dígitos, ou 8+8 separados por barra",
+      "   amplo   = qualquer número que comece com o prefixo de uma das empresas,",
+      "             mais as viagens vazias. Prefixos: 15 UTIL, 20 REX, 25 RAF, 35 Samp.",
+      "",
+      "ativa: false devolve o comportamento antigo, tudo é serviço.",
+      "",
+      "prefixos_internos, decidido em 02/09/2026: nome de serviço que começa com um",
+      "destes é bloco interno, e o teste vem ANTES do por_tipo. Existe porque o",
+      "transporte de funcionário sai como Viagem Vazia, que o por_tipo trata como",
+      "serviço comercial."
+    ],
+    "ativa": true,
+    "prefixos_internos": [
+      "FUNCIONARIO"
+    ],
+    "por_tipo": {
+      "_leia": [
+        "Decisão de 27/08/2026: só linha regular entra no encadeamento.",
+        "Fretamento e Turismo ficam de fora junto com Reserva, Vistoria e Socorro.",
+        "Comparação sem acento e em maiúsculas."
+      ],
+      "servicos": [
+        "NORMAL",
+        "EXTRA",
+        "VIAGEM VAZIA"
+      ],
+      "internos": [
+        "FRETAMENTO",
+        "TURISMO",
+        "RESERVA",
+        "VISTORIA",
+        "SOCORRO"
+      ]
+    },
+    "cenario": "amplo",
+    "cenarios": {
+      "estrito": {
+        "descricao": "número de 8 dígitos, ou 8+8 separados por barra",
+        "padroes": [
+          "^\\d{8}(?:/\\d{8})*$"
+        ]
+      },
+      "amplo": {
+        "descricao": "número das empresas 15, 20, 25 e 35, mais viagem vazia VZ",
+        "padroes": [
+          "^(?:15|20|25|35)\\d",
+          "^VZ"
+        ]
+      }
+    }
+  },
+  "linhas_curtas": {
+    "_leia": [
+      "Linhas cuja viagem inteira leva pouco tempo toleram virada mais",
+      "apertada. Quando a virada fica abaixo do mínimo e os DOIS lados são",
+      "dessas linhas, a anomalia sai com tipo VIRADA_LINHA_CURTA, filtro",
+      "próprio no relatório e uma severidade abaixo. Não é perdão: continua",
+      "contando como anomalia e o mínimo segue o mesmo.",
+      "",
+      "O par não tem direção: BSB x GYN vale nos dois sentidos. A ponta é",
+      "comparada pela zona quando o local tem zona em zonas.json, então JDF",
+      "cobre GJF e JFA.",
+      "",
+      "Rastreado no execucao.XLS em 02/09/2026, escolha do Daniel: mediana de",
+      "viagem até 5h e pelo menos 10 viagens no arquivo. Isso deixou 11 dos",
+      "55 pares com mediana até 5h, cortando os 30 que aparecem 1 ou 2 vezes.",
+      "Para reabrir o critério, rode ferramentas/rastrear_linhas.py."
+    ],
+    "ativa": true,
+    "duracao_maxima_min": 300,
+    "pares": [
+      [
+        "JDF",
+        "RIO"
+      ],
+      [
+        "BSB",
+        "GYN"
+      ],
+      [
+        "BMA",
+        "VLA"
+      ],
+      [
+        "RIO",
+        "VLA"
+      ],
+      [
+        "RIO",
+        "VAS"
+      ],
+      [
+        "AOZ",
+        "RIO"
+      ],
+      [
+        "BSB",
+        "PCT"
+      ],
+      [
+        "BCN",
+        "BHZ"
+      ],
+      [
+        "JDF",
+        "VLA"
+      ],
+      [
+        "CLV",
+        "GYN"
+      ],
+      [
+        "API",
+        "RIO"
+      ]
+    ],
+    "_medido": {
+      "JDF x RIO": "247 viagens, mediana 3h40, max 5h00",
+      "BSB x GYN": "373 viagens, mediana 3h45, max 5h10",
+      "BMA x VLA": "126 viagens, mediana 2h32, max 2h35",
+      "RIO x VLA": "110 viagens, mediana 3h35, max 4h15",
+      "RIO x VAS": "77 viagens, mediana 3h05, max 3h59",
+      "AOZ x RIO": "61 viagens, mediana 2h45, max 3h15",
+      "BSB x PCT": "48 viagens, mediana 4h10, max 4h10",
+      "BCN x BHZ": "20 viagens, mediana 3h20, max 4h14",
+      "JDF x VLA": "19 viagens, mediana 3h00, max 3h05",
+      "CLV x GYN": "18 viagens, mediana 2h37, max 2h45",
+      "API x RIO": "11 viagens, mediana 4h15, max 4h44"
+    }
+  },
+  "minimo_padrao_min": 240,
+  "tolerancia_min": 5,
+  "excecoes": [
+    {
+      "id": "continuidade-servico",
+      "descricao": "Mesmo número de serviço, é continuação da viagem e não virada",
+      "_leia": [
+        "A pedra às vezes é quebrada em seções dentro da mesma viagem, por troca",
+        "de carro ou rendição. As duas seções carregam o mesmo número de serviço,",
+        "então o intervalo entre elas não é virada.",
+        "",
+        "Cuidado: mesmo número nem sempre é continuação. No dia 26/08, 13 dos 33",
+        "pares com número igual são a mesma linha diária capturada em dois dias,",
+        "com origem e destino repetidos, por exemplo SAO->IRE seguido de SAO->IRE.",
+        "Esses têm intervalo de 4h30 a 14h e passam no mínimo padrão de qualquer",
+        "jeito, então hoje a regra não muda nada neles.",
+        "",
+        "Para restringir só à continuação de verdade, acrescente em 'quando':",
+        "  \"local_encaixa\": true",
+        "Aí a exceção só vale quando o destino que chega é igual à origem que parte."
+      ],
+      "ativa": true,
+      "minimo_min": 0,
+      "quando": {
+        "mesmo_servico": true
+      }
+    },
+    {
+      "id": "curta-distancia",
+      "descricao": "Serviço de menos de 4h dos dois lados vira na rodoviária",
+      "_leia": [
+        "Linha curta não precisa de virada cheia: o carro é virado na própria",
+        "rodoviária. Vale só quando os DOIS lados são curtos, porque chegar de",
+        "uma perna de 3h45 e sair para uma de 18h nao é virada de rodoviária.",
+        "",
+        "Para outra leitura, apague uma das duas condições:",
+        "  só duracao_anterior_max_min -> conta a viagem que chega",
+        "  só duracao_proxima_max_min  -> conta a viagem que parte"
+      ],
+      "ativa": true,
+      "minimo_min": 1,
+      "quando": {
+        "duracao_anterior_max_min": 240,
+        "duracao_proxima_max_min": 240
+      }
+    },
+    {
+      "id": "atividade-interna",
+      "descricao": "Manutenção, reserva e transferência não exigem virada cheia",
+      "ativa": true,
+      "minimo_min": 0,
+      "quando": {
+        "tipo_anterior": [
+          "MANUTENCAO",
+          "MANUTENÇÃO",
+          "RESERVA",
+          "TRANSFERENCIA",
+          "TRANSFERÊNCIA",
+          "ABASTECIMENTO"
+        ]
+      }
+    },
+    {
+      "id": "atividade-interna-proxima",
+      "descricao": "Entrar em manutenção ou reserva logo após uma viagem é permitido",
+      "ativa": true,
+      "minimo_min": 0,
+      "quando": {
+        "tipo_proximo": [
+          "MANUTENCAO",
+          "MANUTENÇÃO",
+          "RESERVA",
+          "TRANSFERENCIA",
+          "TRANSFERÊNCIA",
+          "ABASTECIMENTO"
+        ]
+      }
+    },
+    {
+      "id": "virada-rapida-rio",
+      "descricao": "Virada curta autorizada na zona do Rio",
+      "ativa": false,
+      "minimo_min": 90,
+      "quando": {
+        "zona_virada": [
+          "ZONA_RIO"
+        ]
+      }
+    },
+    {
+      "id": "virada-rapida-bsb",
+      "descricao": "Virada curta autorizada na zona de Brasília",
+      "ativa": false,
+      "minimo_min": 90,
+      "quando": {
+        "zona_virada": [
+          "ZONA_BSB"
+        ]
+      }
+    },
+    {
+      "id": "trilhos-liberados",
+      "descricao": "Trilhos com escala própria acordada com a coordenação",
+      "ativa": false,
+      "minimo_min": 120,
+      "quando": {
+        "trilho": [
+          "RSD MG [QNT]"
+        ]
+      }
+    },
+    {
+      "id": "pares-liberados",
+      "descricao": "Pares de serviço liberados caso a caso. Use o número do serviço como aparece na extração.",
+      "ativa": false,
+      "minimo_min": 0,
+      "quando": {
+        "par_servico": [
+          [
+            "25203125",
+            "25203030"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "transbordo-bsb-div",
+      "descricao": "Ponta de transbordo em DIV: o carro chega de BSB, os passageiros trocam e ele volta para BSB. Não é virada.",
+      "_leia": [
+        "Confirmado pelo Daniel em 02/09/2026: DIV é ponta de transbordo da linha",
+        "origem BSB x GYN. O carro faz BSB>DIV, vira em DIV e volta DIV>BSB.",
+        "",
+        "Usa par_rota, não par_local: a virada acontece em DIV com DIV, e",
+        "par_local [DIV, DIV] liberaria qualquer virada em DIV. Casar as duas",
+        "rotas inteiras amarra a exceção só nesse par de serviços."
+      ],
+      "ativa": true,
+      "minimo_min": 1,
+      "quando": {
+        "par_rota": [
+          [
+            "BSB>DIV",
+            "DIV>BSB"
+          ],
+          [
+            "DIV>BSB",
+            "BSB>DIV"
+          ]
+        ]
+      }
+    }
+  ]
+}
