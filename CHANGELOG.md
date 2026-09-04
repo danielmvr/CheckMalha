@@ -3,6 +3,14 @@
 Formato MAIOR.MENOR.CORRECAO, explicado em `src/versao.py`. A versão aparece no
 canto superior esquerdo do relatório e da página.
 
+## 2.0.1, 04/09/2026
+
+O apêndice ainda se chamava "Locais fora do mapa" depois da 2.0.0, o que lê como
+pendência quando não há pendência nenhuma: com a regra ligada aquilo é o
+inventário dos locais que respondem por si. O título passou a ser escolhido pela
+chave, "Locais com zona própria", mesma palavra que já aparece no texto da
+anomalia. O parágrafo já tinha sido corrigido na 2.0.0; faltava o título.
+
 ## 2.0.0, 03/09/2026
 
 ### Local fora do mapa vale como zona de si mesmo

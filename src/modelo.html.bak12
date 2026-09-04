@@ -374,7 +374,7 @@ button.marcador:hover{background:#F5F8FB}
   <main id="lista"></main>
 
   <section class="apendice" id="secaoLocais" hidden>
-    <h2 id="tituloLocais">Locais fora do mapa</h2>
+    <h2>Locais fora do mapa</h2>
     <p id="notaLocais"></p>
     <div class="nuvem" id="locais"></div>
   </section>
@@ -823,12 +823,6 @@ $("#exportar").addEventListener("click", () => {
     // O texto depende da regra em vigor. Com local valendo por si, dizer que a
     // continuidade não é validada seria mentira, e é justamente o contrário: é
     // aqui que se procura a causa de uma quebra que pareça errada.
-    // O título também depende da regra. "Fora do mapa" lê como pendência, e com
-    // a regra ligada não há pendência nenhuma: é o inventário de quem responde
-    // por si. Mesma palavra que aparece no texto da anomalia, "zona própria".
-    $("#tituloLocais").textContent = (DADOS.resumo.zonas || {}).local_sem_zona_vale_por_si
-      ? "Locais com zona própria"
-      : "Locais fora do mapa";
     $("#notaLocais").innerHTML = (DADOS.resumo.zonas || {}).local_sem_zona_vale_por_si
       ? "Estes códigos apareceram na extração e não estão em " +
         "<code>config/zonas.json</code>, então cada um vale como zona de si mesmo. " +
