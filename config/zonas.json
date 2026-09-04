@@ -16,6 +16,27 @@
     "Os _usos vêm do execucao.XLS, dia alvo 02/09/2026.",
     "PEST entrou na ZONA_JDF em 02/09/2026, pela coordenação."
   ],
+  "local_sem_zona_vale_por_si": true,
+  "_local_sem_zona_vale_por_si": [
+    "Ligado em 03/09/2026, decisão do Daniel.",
+    "",
+    "Local que não está em nenhuma zona vale como zona de si mesmo. Chegar",
+    "num código e sair de outro, com qualquer dos dois fora do mapa, passou a",
+    "ser TRILHO QUEBRADO em vez de 'não dá para validar'.",
+    "",
+    "Por que mudou: na janela de 31/08 a 08/09 havia 16 LOCAL_FORA_DO_MAPA e",
+    "ZERO SEQUENCIA. Ou seja, a checagem de trilho quebrado não disparava",
+    "nunca fora das regiões metropolitanas. Os 12 pares medidos eram todos de",
+    "códigos diferentes, nenhum era o mesmo lugar: RIO->CPQ, BRA->LDM,",
+    "SSA->BSB, BHZ->CFO e por aí. Eram quebras reais escondidas.",
+    "",
+    "Desligar volta ao comportamento antigo, sem mexer em mais nada.",
+    "",
+    "RISCO A VIGIAR: dois códigos diferentes que na prática são o MESMO lugar",
+    "viram quebra falsa. O remédio é o de sempre, cadastrar os dois na mesma",
+    "zona, ou usar 'apelidos' se um é só outra grafia do outro. A lista de",
+    "locais sem zona no fim do relatório é onde se procura por esses casos."
+  ],
   "zonas": {
     "ZONA_RIO": {
       "nome": "Zona RIO",

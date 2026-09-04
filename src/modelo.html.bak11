@@ -135,8 +135,6 @@ button.marcador:hover{background:#F5F8FB}
   color:var(--tinta-fraca);align-self:center;padding-right:2px;
 }
 .ficha:focus-visible{outline:2px solid var(--traco);outline-offset:2px}
-.ficha:disabled{opacity:.38;cursor:default;border-color:var(--regua-fina)}
-.ficha:disabled:hover{border-color:var(--regua-fina)}
 .contagem-visivel{
   margin-left:auto;font-family:var(--dado);font-size:11.5px;color:var(--tinta-fraca);
 }
@@ -375,7 +373,8 @@ button.marcador:hover{background:#F5F8FB}
 
   <section class="apendice" id="secaoLocais" hidden>
     <h2>Locais fora do mapa</h2>
-    <p id="notaLocais"></p>
+    <p>Estes códigos apareceram na extração mas não estão em <code>config/zonas.json</code>.
+       Enquanto não forem cadastrados, a continuidade dos trilhos que passam por eles não é validada.</p>
     <div class="nuvem" id="locais"></div>
   </section>
 
@@ -512,18 +511,6 @@ const esc = t => String(t ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;
                               : estado.empresas.add(nome);
     botao.setAttribute("aria-pressed", String(estado.empresas.has(nome)));
     desenhar();
-  });
-})();
-
-/* Ficha de tipo sem ocorrência no dia fica desligada, para não prometer filtro
-   que devolve tela vazia. Virou necessário quando o LOCAL_FORA_DO_MAPA passou a
-   dar zero sempre, com local sem zona valendo por si. */
-(function fichasVazias(){
-  const porTipo = DADOS.resumo.tipo || {};
-  document.querySelectorAll(".ficha[data-tipo]").forEach(botao => {
-    if(porTipo[botao.dataset.tipo]) return;
-    botao.disabled = true;
-    botao.title = "Nenhuma ocorrência deste tipo neste relatório";
   });
 })();
 
@@ -820,19 +807,6 @@ $("#exportar").addEventListener("click", () => {
   const locais = Object.entries(DADOS.locais_fora_do_mapa || {});
   if(locais.length){
     $("#secaoLocais").hidden = false;
-    // O texto depende da regra em vigor. Com local valendo por si, dizer que a
-    // continuidade não é validada seria mentira, e é justamente o contrário: é
-    // aqui que se procura a causa de uma quebra que pareça errada.
-    $("#notaLocais").innerHTML = (DADOS.resumo.zonas || {}).local_sem_zona_vale_por_si
-      ? "Estes códigos apareceram na extração e não estão em " +
-        "<code>config/zonas.json</code>, então cada um vale como zona de si mesmo. " +
-        "A continuidade <b>é</b> validada: chegar em um deles e sair de outro conta " +
-        "como trilho quebrado. Se dois códigos desta lista forem o mesmo lugar na " +
-        "prática, cadastre os dois na mesma zona, ou um como apelido do outro, " +
-        "senão aparece quebra falsa."
-      : "Estes códigos apareceram na extração mas não estão em " +
-        "<code>config/zonas.json</code>. Enquanto não forem cadastrados, a " +
-        "continuidade dos trilhos que passam por eles não é validada.";
     $("#locais").innerHTML = locais.map(([codigo,vezes]) =>
       '<span class="pedaco">' + esc(codigo) + " <b>" + vezes + "&times;</b></span>").join("");
   }

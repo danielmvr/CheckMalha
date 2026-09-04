@@ -324,13 +324,6 @@ def main() -> int:
     aviso(f"Virada mínima: {regras.minimo_padrao:.0f} min, "
           f"tolerância {regras.tolerancia:.0f} min, "
           f"{len(regras.excecoes)} exceção(ões) ativa(s)")
-    if zonas.local_vale_por_si:
-        aviso(f"Zonas: {len(zonas.zonas)} cadastradas, e local fora do mapa vale "
-              f"como zona de si mesmo, então trilho que não fecha é apontado")
-    else:
-        aviso(f"Zonas: {len(zonas.zonas)} cadastradas. Local fora do mapa NÃO é "
-              f"validado, o elo sai como LOCAL_FORA_DO_MAPA")
-
     if zonas.garagens_ativas:
         aviso(f"Garagens: regra ativa, {len(zonas.catalogo)} siglas no catálogo")
     elif zonas.catalogo_erro:

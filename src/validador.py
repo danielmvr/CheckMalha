@@ -44,6 +44,10 @@ class MapaZonas:
             for local in dados.get("locais", []):
                 self.local_para_zona[_sem_acento(local)] = codigo
         self.desconhecidos: dict[str, int] = {}
+        # Local fora do mapa de zonas vale como zona de si mesmo. Sem isso, elo
+        # que toca um local sem zona sai como "não dá para validar", e o trilho
+        # quebrado nunca é apontado fora das regiões metropolitanas.
+        self.local_vale_por_si = bool(config.get("local_sem_zona_vale_por_si", False))
 
         self._configurar_garagens(config.get("garagens", {}), pasta_config)
 
@@ -129,14 +133,22 @@ class MapaZonas:
         ra, rb = self.resolver(a), self.resolver(b)
         if ra and ra == rb:
             return True
+        if not ra or not rb:
+            # Local em branco é desconhecido, não é lugar diferente. Nunca virar
+            # quebra por falta de dado.
+            return None
         za, zb = self.zona(a), self.zona(b)
         if za is None or zb is None:
-            return None
+            # O caso ra == rb já saiu acima, então aqui os códigos são
+            # diferentes de fato: com a regra ligada, o trilho não fecha.
+            return False if self.local_vale_por_si else None
         return za == zb
 
     def rotulo(self, local: str) -> str:
         zona = self.zona(local)
-        return self.nome_zona.get(zona, "fora do mapa") if zona else "fora do mapa"
+        if zona:
+            return self.nome_zona.get(zona, "fora do mapa")
+        return "zona própria" if self.local_vale_por_si else "fora do mapa"
 
     def rotulo_local(self, local: str) -> str:
         """Mostra a garagem junto do local resolvido, quando são diferentes."""
@@ -534,6 +546,10 @@ def validar(registros: list[dict], mapa: MapaZonas, regras: RegrasVirada,
             "fora_do_encadeamento": fora_do_encadeamento,
         },
         "dispensadas": dispensadas,
+        "zonas": {
+            "local_sem_zona_vale_por_si": mapa.local_vale_por_si,
+            "zonas_cadastradas": len(mapa.zonas),
+        },
         "linhas_curtas": {
             "ativa": bool(linhas_curtas and linhas_curtas.ativa),
             "pares": len(linhas_curtas.pares) if linhas_curtas else 0,

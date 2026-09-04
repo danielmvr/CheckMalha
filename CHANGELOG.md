@@ -3,6 +3,50 @@
 Formato MAIOR.MENOR.CORRECAO, explicado em `src/versao.py`. A versão aparece no
 canto superior esquerdo do relatório e da página.
 
+## 2.0.0, 03/09/2026
+
+### Local fora do mapa vale como zona de si mesmo
+
+**Mudança MAIOR: a linha de base tem de ser recontada.** Não muda o total de
+anomalias, muda a classificação e a severidade delas.
+
+O que estava errado: a continuidade do trilho só era conferida entre locais
+cadastrados em alguma zona. Qualquer elo tocando um local fora do mapa saía como
+`LOCAL_FORA_DO_MAPA`, severidade BAIXA, com o sentido de "não dá para validar".
+Medido na janela de 31/08 a 08/09: **16 LOCAL_FORA_DO_MAPA e ZERO SEQUENCIA**.
+A checagem de trilho quebrado nunca disparava fora das regiões metropolitanas.
+
+E os 12 pares medidos eram todos de códigos diferentes, nenhum era o mesmo lugar:
+`RIO->CPQ`, `BRA->LDM`, `SSA->RSTO`, `SSA->BSB`, `BHZ->CFO`, `JDF->BCN`,
+`JBI->SMV`, `LDM->IBT`. Eram quebras reais escondidas atrás de "não sei validar".
+
+Agora, com `local_sem_zona_vale_por_si: true` no `zonas.json`, local sem zona
+conta como zona de si mesmo. Efeito medido, dia a dia, conversão de 1 para 1:
+
+| dia | antes | agora |
+|---|---|---|
+| 31/08 | 1 fora do mapa, 0 quebrado | 0 fora do mapa, 1 quebrado |
+| 03/09 | 3 fora do mapa, 0 quebrado | 0 fora do mapa, 3 quebrado |
+| 08/09 | 3 fora do mapa, 0 quebrado | 0 fora do mapa, 3 quebrado |
+
+O total por dia não mudou em nenhum dos 9 dias. O que mudou é que 16 achados
+saíram de BAIXA "não validado" para ALTA "trilho quebrado".
+
+- `mesma_zona` devolve `False` quando os códigos diferem e algum está fora do
+  mapa. O caso "mesmo código" já fechava antes e continua fechando.
+- **Guarda nova:** local em branco continua devolvendo `None`. Falta de dado não
+  pode virar quebra.
+- `rotulo` de local sem zona virou "zona própria".
+- O texto do apêndice "Locais fora do mapa" mudou junto: agora ele explica que a
+  continuidade **é** validada e que a lista é onde se procura a causa de uma
+  quebra que pareça errada.
+- Ficha de tipo sem ocorrência no relatório fica desabilitada, porque
+  `LOCAL_FORA_DO_MAPA` passou a dar zero sempre.
+
+**Risco a vigiar:** dois códigos diferentes que na prática são o mesmo lugar
+viram quebra falsa. O remédio é cadastrar os dois na mesma zona, ou um como
+apelido do outro. Desligar a chave volta ao comportamento antigo.
+
 ## 1.5.0, 03/09/2026
 
 ### Exceção vira-em-man
